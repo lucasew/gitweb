@@ -1,7 +1,9 @@
 import { createLowlight, all } from 'lowlight';
 import { langFromPath } from '@/lib/diffLang';
+import { ensureSvelteHighlight } from '@/lib/registerSvelteHighlight';
 
 const lowlight = createLowlight(all);
+ensureSvelteHighlight((g) => lowlight.register(g));
 
 function escapeHtml(s: string): string {
   return s

@@ -2,6 +2,8 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
 import { initTheme } from './lib/theme';
+// Registers Svelte grammar on @git-diff-view/lowlight for PR diffs
+import '@/lib/registerSvelteHighlight';
 import './index.css';
 
 initTheme();

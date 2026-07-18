@@ -14,6 +14,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
+    "@git-diff-view/lowlight": "0.0.30",
     "@git-diff-view/react": "^0.0.30",
     "@tanstack/react-router": "^1.120.0",
     "clsx": "^2.1.1",
@@ -21,6 +22,7 @@
     "dompurify": "^3.4.12",
     "github-markdown-css": "^5.9.0",
     "highlight.js": "^11.11.1",
+    "highlightjs-svelte": "^1.0.6",
     "lowlight": "^3.3.0",
     "lucide-react": "^0.511.0",
     "react": "^19.1.0",

@@ -10,6 +10,7 @@ describe('langFromPath', () => {
     expect(langFromPath('a/b.nix')).toBe('nix');
     expect(langFromPath('cfg.yml')).toBe('yaml');
     expect(langFromPath('x.go')).toBe('go');
+    expect(langFromPath('App.svelte')).toBe('svelte');
   });
 
   it('handles special basenames', () => {

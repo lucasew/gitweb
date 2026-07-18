@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@git-diff-view/lowlight':
+        specifier: 0.0.30
+        version: 0.0.30
       '@git-diff-view/react':
         specifier: ^0.0.30
         version: 0.0.30(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -29,6 +32,9 @@ importers:
       highlight.js:
         specifier: ^11.11.1
         version: 11.11.1
+      highlightjs-svelte:
+        specifier: ^1.0.6
+        version: 1.0.6
       lowlight:
         specifier: ^3.3.0
         version: 3.3.0
@@ -1109,6 +1115,9 @@ packages:
   highlight.js@11.11.1:
     resolution: {integrity: sha512-Xwwo44whKBVCYoliBQwaPvtd/2tYFkRQtXDWj1nackaV2JPXx3L0+Jvd8/qCJ2p+ML0/XVkJ2q+Mr+UVdpJK5w==}
     engines: {node: '>=12.0.0'}
+
+  highlightjs-svelte@1.0.6:
+    resolution: {integrity: sha512-aXuBPz8df3sOXg90q8rRcBLyxIR8ozPU39a6tJ2rpJUjjd9brRIr55aC0IccW4gsPhQxZ+B3rFugdXsg9/ckDw==}
 
   import-fresh@2.0.0:
     resolution: {integrity: sha512-eZ5H8rcgYazHbKC3PG4ClHNykCSxtAhxSSEM+2mb+7evD2CKF5V7c0dNum7AdpDh0ZdICwZY9sRSn8f+KH96sg==}
@@ -2534,6 +2543,8 @@ snapshots:
       function-bind: 1.1.2
 
   highlight.js@11.11.1: {}
+
+  highlightjs-svelte@1.0.6: {}
 
   import-fresh@2.0.0:
     dependencies:

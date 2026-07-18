@@ -13,4 +13,19 @@ describe('highlightFileToLines', () => {
       true,
     );
   });
+
+  it('highlights svelte (registered third-party grammar)', () => {
+    const code = [
+      '<script>',
+      '  let count = 0;',
+      '</script>',
+      '<button on:click={() => count += 1}>{count}</button>',
+    ].join('\n');
+    const { lang, lines } = highlightFileToLines(code, 'Counter.svelte');
+    expect(lang).toBe('svelte');
+    expect(lines).toHaveLength(4);
+    expect(lines.some((l) => l.includes('hljs') || l.includes('script'))).toBe(
+      true,
+    );
+  });
 });

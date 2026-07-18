@@ -67,6 +67,8 @@ const EXT_TO_LANG: Record<string, string> = {
   sass: 'scss',
   less: 'less',
   vue: 'vue',
+  svelte: 'svelte',
+  svx: 'svelte',
   // data / config
   json: 'json',
   jsonc: 'json',
