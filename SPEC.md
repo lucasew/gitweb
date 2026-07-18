@@ -32,6 +32,7 @@ It is a **tool to get things done**, not a marketing clone of GitHub. North star
 - GitHub Enterprise / custom host UI (client must still accept a future `baseUrl`)
 - GraphQL subscriptions (GitHub does not offer them)
 - Safer-than-GitHub credential storage (client-held PAT is accepted for dogfood)
+- **Guest / anonymous / unauthenticated browsing** — GitHub GraphQL requires auth; REST-only guest is not a product path. PAT (or later device-flow OAuth) is mandatory to use the app.
 
 ---
 
@@ -43,7 +44,7 @@ It is a **tool to get things done**, not a marketing clone of GitHub. North star
 | Secondary | Maintainers doing power triage (labels, assignees, merge strategies, reviews) |
 | Non-target (v1) | Org admins configuring SSO/billing; CI engineers needing full Actions consoles |
 
-Auth model assumes a user who can create a PAT (same mental model as `gh auth token`).
+Auth model assumes a user who can create a PAT (same mental model as `gh auth token`). **No guest mode** — if GraphQL cannot run without credentials, unauthenticated access is discarded entirely (no REST guest fallback, no shared proxy token for “public browse”).
 
 ---
 
