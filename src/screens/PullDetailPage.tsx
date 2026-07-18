@@ -6,13 +6,20 @@ import {
   useRelayEnvironment,
 } from 'react-relay';
 import { STORE_AND_NETWORK } from '@/lib/relayPolicy';
-import { lazy, Suspense, useState } from 'react';
+import {
+  lazy,
+  Suspense,
+  useId,
+  useRef,
+  useState,
+  type CSSProperties,
+} from 'react';
 import { Link } from '@tanstack/react-router';
 import {
   CircleCheck,
   ExternalLink as ExternalLinkIcon,
+  Ellipsis,
   GitPullRequestDraft,
-  MessageSquareText,
   XCircle,
 } from 'lucide-react';
 import type {
@@ -314,7 +321,13 @@ export function PullDetailPage({
   const pr = repo?.pullRequest;
   const [reviewBody, setReviewBody] = useState('');
   const [merging, setMerging] = useState(false);
-  const [mergeMethod, setMergeMethod] = useState<MergeMethod | null>(null);
+  /** Single daisyUI popover for draft / review / merge / close */
+  const actionsPopoverDomId = `pr-actions-${useId().replace(/:/g, '')}`;
+  const actionsAnchorName = `--${actionsPopoverDomId}`;
+  const actionsPopoverRef = useRef<HTMLDivElement>(null);
+  const closeActionsPopover = () => {
+    actionsPopoverRef.current?.hidePopover?.();
+  };
 
   const [commitMerge, mergeInFlight] =
     useMutation<PullDetailPageMergeMutation>(mergeMutation);
@@ -388,21 +401,20 @@ export function PullDetailPage({
 
   const pendingReview = findPendingReview(data);
 
-  const allowedMethods: MergeMethod[] = (
-    [
-      repo?.mergeCommitAllowed ? 'MERGE' : null,
-      repo?.squashMergeAllowed ? 'SQUASH' : null,
-      repo?.rebaseMergeAllowed ? 'REBASE' : null,
-    ] as const
-  ).filter((m): m is MergeMethod => m != null);
-
-  const defaultMethod: MergeMethod =
-    (repo?.viewerDefaultMergeMethod as MergeMethod | undefined) &&
-    allowedMethods.includes(repo.viewerDefaultMergeMethod as MergeMethod)
-      ? (repo.viewerDefaultMergeMethod as MergeMethod)
-      : (allowedMethods[0] ?? 'MERGE');
-
-  const activeMergeMethod = mergeMethod ?? defaultMethod;
+  const allowedMethods: MergeMethod[] = (() => {
+    const methods = (
+      [
+        repo?.mergeCommitAllowed ? 'MERGE' : null,
+        repo?.squashMergeAllowed ? 'SQUASH' : null,
+        repo?.rebaseMergeAllowed ? 'REBASE' : null,
+      ] as const
+    ).filter((m): m is MergeMethod => m != null);
+    const def = repo?.viewerDefaultMergeMethod as MergeMethod | undefined;
+    if (def && methods.includes(def) && methods[0] !== def) {
+      return [def, ...methods.filter((m) => m !== def)];
+    }
+    return methods;
+  })();
 
   type ReviewEvent = 'APPROVE' | 'COMMENT' | 'REQUEST_CHANGES';
 
@@ -532,8 +544,12 @@ export function PullDetailPage({
           {pr.headRefName} → {pr.baseRefName}
         </div>
 
-        <div className="flex flex-wrap items-end gap-2 w-full min-w-0 border-b border-base-300">
-          <div role="tablist" className="tabs tabs-bordered min-w-0 flex-1">
+        <div className="flex flex-wrap items-end justify-between gap-x-3 gap-y-2 w-full min-w-0 border-b border-base-300">
+          {/* Tabs stay one unit when the row wraps */}
+          <div
+            role="tablist"
+            className="tabs tabs-bordered shrink-0 min-w-0"
+          >
             <Link
               role="tab"
               to="/$owner/$name/pull/$number"
@@ -554,252 +570,9 @@ export function PullDetailPage({
             </Link>
           </div>
 
-          <div className="flex flex-wrap items-center gap-1.5 shrink-0 ms-auto pb-1">
+          <div className="flex flex-nowrap items-center gap-1.5 shrink-0 ms-auto pb-1">
             {pendingReview ? (
               <ReviewStateBadge state="PENDING" label="Pending review" />
-            ) : null}
-
-            {canReview ? (
-              <button
-                type="button"
-                className={cn(
-                  'btn btn-sm gap-1.5',
-                  pr.isDraft ? 'btn-primary' : 'btn-outline',
-                )}
-                disabled={draftBusy}
-                title={
-                  pr.isDraft
-                    ? 'Mark this pull request as ready for review'
-                    : 'Convert this pull request to a draft'
-                }
-                aria-label={
-                  draftBusy
-                    ? 'Updating draft state'
-                    : pr.isDraft
-                      ? 'Ready for review'
-                      : 'Convert to draft'
-                }
-                onClick={() => {
-                  if (pr.isDraft) {
-                    commitReadyForReview({
-                      variables: { id: pr.id },
-                      optimisticResponse: {
-                        markPullRequestReadyForReview: {
-                          pullRequest: {
-                            id: pr.id,
-                            isDraft: false,
-                            state: pr.state,
-                          },
-                        },
-                      },
-                      onCompleted: () => {
-                        toast.info('Marked ready for review');
-                        refresh();
-                      },
-                      onError: (e) =>
-                        toast.error('Could not mark ready', e.message),
-                    });
-                  } else {
-                    commitConvertToDraft({
-                      variables: { id: pr.id },
-                      optimisticResponse: {
-                        convertPullRequestToDraft: {
-                          pullRequest: {
-                            id: pr.id,
-                            isDraft: true,
-                            state: pr.state,
-                          },
-                        },
-                      },
-                      onCompleted: () => {
-                        toast.info('Converted to draft');
-                        refresh();
-                      },
-                      onError: (e) =>
-                        toast.error('Could not convert to draft', e.message),
-                    });
-                  }
-                }}
-              >
-                {pr.isDraft ? (
-                  <CircleCheck className="size-4 shrink-0" aria-hidden />
-                ) : (
-                  <GitPullRequestDraft className="size-4 shrink-0" aria-hidden />
-                )}
-                <span className="hidden sm:inline">
-                  {draftBusy
-                    ? 'Updating…'
-                    : pr.isDraft
-                      ? 'Ready for review'
-                      : 'Convert to draft'}
-                </span>
-              </button>
-            ) : null}
-
-            {canReview ? (
-              <div className="dropdown dropdown-end">
-                <div
-                  tabIndex={0}
-                  role="button"
-                  className="btn btn-sm btn-outline gap-1.5"
-                  title="Review"
-                  aria-label="Review"
-                >
-                  <MessageSquareText className="size-4 shrink-0" aria-hidden />
-                  <span className="hidden sm:inline">Review</span>
-                  <span className="opacity-50 text-xs hidden sm:inline">▾</span>
-                </div>
-                <ul
-                  tabIndex={0}
-                  className="dropdown-content menu bg-base-100 rounded-box z-50 w-64 p-2 shadow-lg border border-base-300 opacity-100"
-                >
-                  <li className="menu-title px-1">
-                    <span>Review summary (optional)</span>
-                  </li>
-                  <li className="disabled !bg-transparent">
-                    <textarea
-                      className="textarea textarea-bordered textarea-sm w-full min-h-16 font-normal bg-base-100 text-base-content border-base-300"
-                      placeholder="Leave a comment…"
-                      value={reviewBody}
-                      onChange={(e) => setReviewBody(e.target.value)}
-                      onClick={(e) => e.stopPropagation()}
-                      onKeyDown={(e) => e.stopPropagation()}
-                    />
-                  </li>
-                  <li className="menu-title">
-                    <span>
-                      {pendingReview ? 'Submit pending' : 'Submit review'}
-                    </span>
-                  </li>
-                  {(
-                    [
-                      ['APPROVE', 'Approve'],
-                      ['COMMENT', pendingReview ? 'Comment only' : 'Comment'],
-                      ['REQUEST_CHANGES', 'Request changes'],
-                    ] as const
-                  ).map(([event, label]) => (
-                    <li key={event}>
-                      <button
-                        type="button"
-                        disabled={reviewBusy}
-                        onClick={() => runReview(event, label)}
-                      >
-                        {label}
-                      </button>
-                    </li>
-                  ))}
-                  {pendingReview ? (
-                    <li>
-                      <button
-                        type="button"
-                        className="text-error"
-                        disabled={discardInFlight}
-                        onClick={runDiscardPending}
-                      >
-                        Discard pending
-                      </button>
-                    </li>
-                  ) : null}
-                </ul>
-              </div>
-            ) : null}
-
-            {canReview ? (
-              <div className="join rounded-full border border-base-300 overflow-hidden bg-base-100">
-                {allowedMethods.length > 0 ? (
-                  <select
-                    className="select select-sm join-item border-0 bg-base-100 text-base-content focus:outline-none w-auto max-w-[min(100%,8rem)] rounded-none opacity-100"
-                    value={activeMergeMethod}
-                    disabled={mergeInFlight || merging}
-                    onChange={(e) =>
-                      setMergeMethod(e.target.value as MergeMethod)
-                    }
-                    aria-label="Merge strategy"
-                    title={MERGE_HINT[activeMergeMethod]}
-                  >
-                    {allowedMethods.map((m) => (
-                      <option key={m} value={m} title={MERGE_HINT[m]}>
-                        {MERGE_SHORT[m]}
-                      </option>
-                    ))}
-                  </select>
-                ) : null}
-                <button
-                  type="button"
-                  className="btn btn-sm btn-primary join-item rounded-none border-0"
-                  disabled={
-                    mergeInFlight ||
-                    merging ||
-                    pr.mergeable === 'CONFLICTING' ||
-                    allowedMethods.length === 0
-                  }
-                  onClick={() => {
-                    setMerging(true);
-                    commitMerge({
-                      variables: {
-                        id: pr.id,
-                        mergeMethod: activeMergeMethod,
-                      },
-                      optimisticResponse: {
-                        mergePullRequest: {
-                          pullRequest: {
-                            id: pr.id,
-                            state: 'OPEN',
-                            merged: false,
-                            mergeable: pr.mergeable,
-                          },
-                        },
-                      },
-                      onCompleted: (res) => {
-                        setMerging(false);
-                        if (res.mergePullRequest?.pullRequest?.merged) {
-                          toast.info(
-                            `Merged (${MERGE_SHORT[activeMergeMethod]})`,
-                          );
-                        } else {
-                          toast.info('Merge completed');
-                        }
-                      },
-                      onError: (e) => {
-                        setMerging(false);
-                        toast.error('Merge failed', e.message);
-                      },
-                    });
-                  }}
-                >
-                  {mergeInFlight || merging
-                    ? 'Merging…'
-                    : MERGE_SHORT[activeMergeMethod]}
-                </button>
-              </div>
-            ) : null}
-
-            {canReview ? (
-              <button
-                type="button"
-                className="btn btn-sm gap-1.5"
-                disabled={closeInFlight}
-                title="Close pull request"
-                aria-label="Close pull request"
-                onClick={() => {
-                  commitClose({
-                    variables: { id: pr.id },
-                    optimisticResponse: {
-                      closePullRequest: {
-                        pullRequest: {
-                          id: pr.id,
-                          state: 'CLOSED',
-                          merged: false,
-                        },
-                      },
-                    },
-                    onError: (e) => toast.error('Close failed', e.message),
-                  });
-                }}
-              >
-                <XCircle className="size-4 shrink-0" aria-hidden />
-                <span className="hidden sm:inline">Close</span>
-              </button>
             ) : null}
 
             <ExternalLink
@@ -811,6 +584,261 @@ export function PullDetailPage({
               <ExternalLinkIcon className="size-4 shrink-0" aria-hidden />
               <span className="hidden sm:inline">GitHub</span>
             </ExternalLink>
+
+            {canReview ? (
+              <>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline gap-1.5"
+                  title="PR actions"
+                  aria-label="PR actions"
+                  popoverTarget={actionsPopoverDomId}
+                  style={{ anchorName: actionsAnchorName } as CSSProperties}
+                >
+                  <Ellipsis className="size-4 shrink-0" aria-hidden />
+                  <span className="hidden sm:inline">More</span>
+                </button>
+                <div
+                  ref={actionsPopoverRef}
+                  id={actionsPopoverDomId}
+                  popover="auto"
+                  className={cn(
+                    'dropdown dropdown-end',
+                    'w-80 max-w-[min(20rem,calc(100vw-1rem))]',
+                    'max-h-[min(32rem,calc(100dvh-2rem))] overflow-y-auto',
+                    'rounded-box bg-base-100 p-3 shadow-lg border border-base-300',
+                    'space-y-3',
+                  )}
+                  style={
+                    {
+                      positionAnchor: actionsAnchorName,
+                      positionArea: 'bottom span-left',
+                      positionTryFallbacks: 'flip-block, flip-inline',
+                    } as CSSProperties
+                  }
+                >
+                  <div className="space-y-1">
+                    <div className="text-xs font-medium opacity-60">Draft</div>
+                    <button
+                      type="button"
+                      className={cn(
+                        'btn btn-sm w-full justify-start gap-2',
+                        pr.isDraft ? 'btn-primary' : 'btn-outline',
+                      )}
+                      disabled={draftBusy}
+                      onClick={() => {
+                        if (pr.isDraft) {
+                          commitReadyForReview({
+                            variables: { id: pr.id },
+                            optimisticResponse: {
+                              markPullRequestReadyForReview: {
+                                pullRequest: {
+                                  id: pr.id,
+                                  isDraft: false,
+                                  state: pr.state,
+                                },
+                              },
+                            },
+                            onCompleted: () => {
+                              toast.info('Marked ready for review');
+                              refresh();
+                              closeActionsPopover();
+                            },
+                            onError: (e) =>
+                              toast.error('Could not mark ready', e.message),
+                          });
+                        } else {
+                          commitConvertToDraft({
+                            variables: { id: pr.id },
+                            optimisticResponse: {
+                              convertPullRequestToDraft: {
+                                pullRequest: {
+                                  id: pr.id,
+                                  isDraft: true,
+                                  state: pr.state,
+                                },
+                              },
+                            },
+                            onCompleted: () => {
+                              toast.info('Converted to draft');
+                              refresh();
+                              closeActionsPopover();
+                            },
+                            onError: (e) =>
+                              toast.error(
+                                'Could not convert to draft',
+                                e.message,
+                              ),
+                          });
+                        }
+                      }}
+                    >
+                      {pr.isDraft ? (
+                        <CircleCheck className="size-4 shrink-0" aria-hidden />
+                      ) : (
+                        <GitPullRequestDraft
+                          className="size-4 shrink-0"
+                          aria-hidden
+                        />
+                      )}
+                      {draftBusy
+                        ? 'Updating…'
+                        : pr.isDraft
+                          ? 'Ready for review'
+                          : 'Convert to draft'}
+                    </button>
+                  </div>
+
+                  <div className="space-y-2 border-t border-base-300 pt-3">
+                    <div className="text-xs font-medium opacity-60">
+                      {pendingReview ? 'Submit pending review' : 'Review'}
+                    </div>
+                    <textarea
+                      className="textarea textarea-bordered textarea-sm w-full min-h-16 font-normal bg-base-100 text-base-content border-base-300"
+                      placeholder="Optional summary…"
+                      value={reviewBody}
+                      onChange={(e) => setReviewBody(e.target.value)}
+                    />
+                    <div className="flex flex-col gap-1">
+                      {(
+                        [
+                          ['APPROVE', 'Approve'],
+                          [
+                            'COMMENT',
+                            pendingReview ? 'Comment only' : 'Comment',
+                          ],
+                          ['REQUEST_CHANGES', 'Request changes'],
+                        ] as const
+                      ).map(([event, label]) => (
+                        <button
+                          key={event}
+                          type="button"
+                          className="btn btn-sm btn-outline justify-start"
+                          disabled={reviewBusy}
+                          onClick={() => {
+                            runReview(event, label);
+                            closeActionsPopover();
+                          }}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                      {pendingReview ? (
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-ghost text-error justify-start"
+                          disabled={discardInFlight}
+                          onClick={() => {
+                            runDiscardPending();
+                            closeActionsPopover();
+                          }}
+                        >
+                          Discard pending
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  <div className="space-y-1 border-t border-base-300 pt-3">
+                    <div className="text-xs font-medium opacity-60">Merge</div>
+                    {pr.mergeable === 'CONFLICTING' ? (
+                      <p className="text-xs text-error px-1">
+                        This branch has conflicts that must be resolved.
+                      </p>
+                    ) : null}
+                    {allowedMethods.length === 0 ? (
+                      <p className="text-xs opacity-50 px-1">
+                        No merge methods enabled on this repository.
+                      </p>
+                    ) : (
+                      <div className="flex flex-col gap-1">
+                        {allowedMethods.map((m) => (
+                          <button
+                            key={m}
+                            type="button"
+                            className="btn btn-sm btn-primary btn-outline justify-start"
+                            disabled={
+                              mergeInFlight ||
+                              merging ||
+                              pr.mergeable === 'CONFLICTING'
+                            }
+                            title={MERGE_HINT[m]}
+                            onClick={() => {
+                              setMerging(true);
+                              commitMerge({
+                                variables: {
+                                  id: pr.id,
+                                  mergeMethod: m,
+                                },
+                                optimisticResponse: {
+                                  mergePullRequest: {
+                                    pullRequest: {
+                                      id: pr.id,
+                                      state: 'OPEN',
+                                      merged: false,
+                                      mergeable: pr.mergeable,
+                                    },
+                                  },
+                                },
+                                onCompleted: (res) => {
+                                  setMerging(false);
+                                  if (
+                                    res.mergePullRequest?.pullRequest?.merged
+                                  ) {
+                                    toast.info(
+                                      `Merged (${MERGE_SHORT[m]})`,
+                                    );
+                                  } else {
+                                    toast.info('Merge completed');
+                                  }
+                                  closeActionsPopover();
+                                },
+                                onError: (e) => {
+                                  setMerging(false);
+                                  toast.error('Merge failed', e.message);
+                                },
+                              });
+                            }}
+                          >
+                            {mergeInFlight || merging
+                              ? 'Merging…'
+                              : MERGE_SHORT[m]}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="border-t border-base-300 pt-3">
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-outline w-full justify-start gap-2"
+                      disabled={closeInFlight}
+                      onClick={() => {
+                        commitClose({
+                          variables: { id: pr.id },
+                          optimisticResponse: {
+                            closePullRequest: {
+                              pullRequest: {
+                                id: pr.id,
+                                state: 'CLOSED',
+                                merged: false,
+                              },
+                            },
+                          },
+                          onCompleted: () => closeActionsPopover(),
+                          onError: (e) =>
+                            toast.error('Close failed', e.message),
+                        });
+                      }}
+                    >
+                      <XCircle className="size-4 shrink-0" aria-hidden />
+                      Close pull request
+                    </button>
+                  </div>
+                </div>
+              </>
+            ) : null}
           </div>
         </div>
 

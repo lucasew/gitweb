@@ -1,4 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from 'react';
 import { cn } from '@/lib/cls';
 import { highlightFileToLines } from '@/lib/highlightCode';
 import {
@@ -67,7 +74,9 @@ export function CodeBlobView({
     null,
   );
   const [menuLine, setMenuLine] = useState<number | null>(null);
-  const menuRef = useRef<HTMLDivElement | null>(null);
+  const lineMenuId = `blob-line-${useId().replace(/:/g, '')}`;
+  const lineAnchor = '--blob-line-menu';
+  const linePopoverRef = useRef<HTMLUListElement | null>(null);
 
   // Scroll + select from #L12 or #L12-L20
   useEffect(() => {
@@ -81,22 +90,16 @@ export function CodeBlobView({
     });
   }, [path, text]);
 
+  // Open shared popover after the active line gets the CSS anchor
   useEffect(() => {
-    if (menuLine == null) return;
-    const onDoc = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuLine(null);
-      }
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setMenuLine(null);
-    };
-    document.addEventListener('mousedown', onDoc);
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('mousedown', onDoc);
-      document.removeEventListener('keydown', onKey);
-    };
+    if (menuLine == null) {
+      linePopoverRef.current?.hidePopover?.();
+      return;
+    }
+    const id = requestAnimationFrame(() => {
+      linePopoverRef.current?.showPopover?.();
+    });
+    return () => cancelAnimationFrame(id);
   }, [menuLine]);
 
   const copyPermalink = async (line: number, kind: 'github' | 'ghweb') => {
@@ -107,6 +110,7 @@ export function CodeBlobView({
         : ghwebBlobUrl(owner, name, refName, path, range);
     const ok = await copyText(url);
     setMenuLine(null);
+    linePopoverRef.current?.hidePopover?.();
     if (ok) {
       toast.info(
         kind === 'github' ? 'GitHub permalink copied' : 'ghweb permalink copied',
@@ -151,47 +155,26 @@ export function CodeBlobView({
                   )}
                 >
                   <td className="ghweb-code-gutter select-none align-top sticky left-0 z-[1] w-px whitespace-nowrap">
-                    <div
-                      className="relative"
-                      ref={menuLine === n ? menuRef : undefined}
+                    <button
+                      type="button"
+                      className="ghweb-code-linenum block w-full text-right px-2 py-0 min-w-[2.5rem] hover:text-primary cursor-pointer"
+                      style={
+                        {
+                          minWidth: `${width + 2}ch`,
+                          ...(menuLine === n
+                            ? { anchorName: lineAnchor }
+                            : {}),
+                        } as CSSProperties
+                      }
+                      aria-label={`Line ${n}, copy permalink`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setMenuLine((cur) => (cur === n ? null : n));
+                        setActive({ start: n, end: n });
+                      }}
                     >
-                      <button
-                        type="button"
-                        className="ghweb-code-linenum block w-full text-right px-2 py-0 min-w-[2.5rem] hover:text-primary cursor-pointer"
-                        style={{ minWidth: `${width + 2}ch` }}
-                        aria-label={`Line ${n}, copy permalink`}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setMenuLine((cur) => (cur === n ? null : n));
-                          setActive({ start: n, end: n });
-                        }}
-                      >
-                        {n}
-                      </button>
-                      {menuLine === n ? (
-                        <ul className="menu menu-sm bg-base-100 border border-base-300 rounded-box shadow-lg absolute left-full top-0 ml-1 z-30 w-56 p-1">
-                          <li className="menu-title px-2 py-1">
-                            <span>Copy permalink</span>
-                          </li>
-                          <li>
-                            <button
-                              type="button"
-                              onClick={() => void copyPermalink(n, 'ghweb')}
-                            >
-                              ghweb link
-                            </button>
-                          </li>
-                          <li>
-                            <button
-                              type="button"
-                              onClick={() => void copyPermalink(n, 'github')}
-                            >
-                              GitHub link
-                            </button>
-                          </li>
-                        </ul>
-                      ) : null}
-                    </div>
+                      {n}
+                    </button>
                   </td>
                   <td className="ghweb-code-content px-3 py-0 align-top whitespace-pre">
                     <code
@@ -207,6 +190,60 @@ export function CodeBlobView({
           </tbody>
         </table>
       </div>
+
+      {/* Shared daisyUI popover for line permalinks */}
+      <ul
+        ref={linePopoverRef}
+        id={lineMenuId}
+        popover="auto"
+        className={cn(
+          'dropdown menu menu-sm',
+          'w-56 rounded-box bg-base-100 p-1 shadow-lg border border-base-300',
+        )}
+        style={
+          {
+            positionAnchor: lineAnchor,
+            positionArea: 'right span-bottom',
+            positionTryFallbacks: 'flip-inline, flip-block',
+          } as CSSProperties
+        }
+        onToggle={(e) => {
+          if (
+            e.currentTarget instanceof HTMLElement &&
+            !e.currentTarget.matches(':popover-open')
+          ) {
+            setMenuLine(null);
+          }
+        }}
+      >
+        <li className="menu-title px-2 py-1">
+          <span>
+            {menuLine != null ? `Line ${menuLine}` : 'Copy permalink'}
+          </span>
+        </li>
+        <li>
+          <button
+            type="button"
+            disabled={menuLine == null}
+            onClick={() =>
+              menuLine != null && void copyPermalink(menuLine, 'ghweb')
+            }
+          >
+            ghweb link
+          </button>
+        </li>
+        <li>
+          <button
+            type="button"
+            disabled={menuLine == null}
+            onClick={() =>
+              menuLine != null && void copyPermalink(menuLine, 'github')
+            }
+          >
+            GitHub link
+          </button>
+        </li>
+      </ul>
     </div>
   );
 }

@@ -7,7 +7,7 @@ import {
   Search,
   Workflow,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState, type CSSProperties } from 'react';
 import { clearToken } from '@/lib/auth';
 import {
   getThemePreference,
@@ -37,6 +37,8 @@ export function TopBar({
   const [rl, setRl] = useState<RateLimitSnapshot | null>(null);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const repo = parseRepoFromPath(pathname);
+  const accountPopoverId = `topbar-account-${useId().replace(/:/g, '')}`;
+  const accountAnchor = `--${accountPopoverId}`;
 
   useEffect(() => subscribeRateLimit(setRl), []);
 
@@ -152,70 +154,81 @@ export function TopBar({
             </div>
           ) : null}
 
-          <div className="dropdown dropdown-end">
-            <div
-              tabIndex={0}
-              role="button"
-              className="btn btn-ghost btn-sm btn-circle avatar placeholder"
-            >
-              {viewerAvatarUrl ? (
-                <div className="w-8 rounded-full overflow-hidden bg-transparent">
-                  <img
-                    src={viewerAvatarUrl}
-                    alt=""
-                    className="bg-transparent"
-                  />
-                </div>
-              ) : (
-                <div className="bg-neutral text-neutral-content w-8 rounded-full">
-                  <span className="text-xs">
-                    {viewerLogin?.[0]?.toUpperCase() ?? '?'}
-                  </span>
-                </div>
-              )}
-            </div>
-            <ul
-              tabIndex={0}
-              className="dropdown-content menu bg-base-100 rounded-box z-50 w-52 p-2 shadow border border-base-300"
-            >
-              {viewerLogin ? (
-                <li className="menu-title">
-                  <span>@{viewerLogin}</span>
-                </li>
-              ) : null}
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm btn-circle avatar placeholder"
+            aria-label="Account menu"
+            popoverTarget={accountPopoverId}
+            style={{ anchorName: accountAnchor } as CSSProperties}
+          >
+            {viewerAvatarUrl ? (
+              <div className="w-8 rounded-full overflow-hidden bg-transparent">
+                <img
+                  src={viewerAvatarUrl}
+                  alt=""
+                  className="bg-transparent"
+                />
+              </div>
+            ) : (
+              <div className="bg-neutral text-neutral-content w-8 rounded-full">
+                <span className="text-xs">
+                  {viewerLogin?.[0]?.toUpperCase() ?? '?'}
+                </span>
+              </div>
+            )}
+          </button>
+          <ul
+            id={accountPopoverId}
+            popover="auto"
+            className={cn(
+              'dropdown menu dropdown-end',
+              'w-52 rounded-box bg-base-100 p-2 shadow border border-base-300',
+            )}
+            style={
+              {
+                positionAnchor: accountAnchor,
+                positionArea: 'bottom span-left',
+                positionTryFallbacks: 'flip-block, flip-inline',
+              } as CSSProperties
+            }
+          >
+            {viewerLogin ? (
+              <li className="menu-title">
+                <span>@{viewerLogin}</span>
+              </li>
+            ) : null}
+            <li>
+              <button
+                type="button"
+                onClick={() => {
+                  const order: ThemePreference[] = [
+                    'system',
+                    'light',
+                    'dark',
+                  ];
+                  const i = order.indexOf(theme);
+                  const next = order[(i + 1) % order.length]!;
+                  setTheme(next);
+                  setThemePreference(next);
+                }}
+              >
+                Theme: {theme}
+              </button>
+            </li>
+            {signedIn ? (
               <li>
                 <button
                   type="button"
                   onClick={() => {
-                    const order: ThemePreference[] = [
-                      'system',
-                      'light',
-                      'dark',
-                    ];
-                    const i = order.indexOf(theme);
-                    const next = order[(i + 1) % order.length]!;
-                    setTheme(next);
-                    setThemePreference(next);
+                    clearToken();
+                    onSignedOut();
                   }}
                 >
-                  Theme: {theme}
+                  Sign out
                 </button>
               </li>
-              {signedIn ? (
-                <li>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      clearToken();
-                      onSignedOut();
-                    }}
-                  >
-                    Sign out
-                  </button>
-                </li>
-              ) : null}
-            </ul>
-          </div>
+            ) : null}
+          </ul>
         </div>
       </div>
     </header>
