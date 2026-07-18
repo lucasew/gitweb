@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<1fb17cddc3957d25cdc5bc8311e25626>>
+ * @generated SignedSource<<d9e54db20974266fd18d7b57a8de1c2e>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -20,9 +20,12 @@ export type PullDetailPageReviewMutation$data = {
   readonly addPullRequestReview: {
     readonly pullRequestReview: {
       readonly author: {
+        readonly avatarUrl: any;
         readonly login: string;
+        readonly name?: string | null | undefined;
       } | null | undefined;
       readonly body: string;
+      readonly bodyHTML: any;
       readonly createdAt: any;
       readonly id: string;
       readonly state: PullRequestReviewState;
@@ -98,15 +101,49 @@ v7 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
-  "name": "createdAt",
+  "name": "bodyHTML",
   "storageKey": null
 },
 v8 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
+  "name": "createdAt",
+  "storageKey": null
+},
+v9 = {
+  "alias": null,
+  "args": null,
+  "kind": "ScalarField",
   "name": "login",
   "storageKey": null
+},
+v10 = {
+  "alias": null,
+  "args": [
+    {
+      "kind": "Literal",
+      "name": "size",
+      "value": 40
+    }
+  ],
+  "kind": "ScalarField",
+  "name": "avatarUrl",
+  "storageKey": "avatarUrl(size:40)"
+},
+v11 = {
+  "kind": "InlineFragment",
+  "selections": [
+    {
+      "alias": null,
+      "args": null,
+      "kind": "ScalarField",
+      "name": "name",
+      "storageKey": null
+    }
+  ],
+  "type": "User",
+  "abstractKey": null
 };
 return {
   "fragment": {
@@ -139,6 +176,7 @@ return {
               (v5/*: any*/),
               (v6/*: any*/),
               (v7/*: any*/),
+              (v8/*: any*/),
               {
                 "alias": null,
                 "args": null,
@@ -147,7 +185,9 @@ return {
                 "name": "author",
                 "plural": false,
                 "selections": [
-                  (v8/*: any*/)
+                  (v9/*: any*/),
+                  (v10/*: any*/),
+                  (v11/*: any*/)
                 ],
                 "storageKey": null
               }
@@ -191,6 +231,7 @@ return {
               (v5/*: any*/),
               (v6/*: any*/),
               (v7/*: any*/),
+              (v8/*: any*/),
               {
                 "alias": null,
                 "args": null,
@@ -206,7 +247,9 @@ return {
                     "name": "__typename",
                     "storageKey": null
                   },
-                  (v8/*: any*/),
+                  (v9/*: any*/),
+                  (v10/*: any*/),
+                  (v11/*: any*/),
                   {
                     "kind": "InlineFragment",
                     "selections": [
@@ -227,16 +270,16 @@ return {
     ]
   },
   "params": {
-    "cacheID": "53f56f01b20428d898d6e7f4f825a786",
+    "cacheID": "f7df953969e4679ca837e871199da99f",
     "id": null,
     "metadata": {},
     "name": "PullDetailPageReviewMutation",
     "operationKind": "mutation",
-    "text": "mutation PullDetailPageReviewMutation(\n  $id: ID!\n  $event: PullRequestReviewEvent!\n  $body: String\n) {\n  addPullRequestReview(input: {pullRequestId: $id, event: $event, body: $body}) {\n    pullRequestReview {\n      id\n      state\n      body\n      createdAt\n      author {\n        __typename\n        login\n        ... on Node {\n          __isNode: __typename\n          id\n        }\n      }\n    }\n  }\n}\n"
+    "text": "mutation PullDetailPageReviewMutation(\n  $id: ID!\n  $event: PullRequestReviewEvent!\n  $body: String\n) {\n  addPullRequestReview(input: {pullRequestId: $id, event: $event, body: $body}) {\n    pullRequestReview {\n      id\n      state\n      body\n      bodyHTML\n      createdAt\n      author {\n        __typename\n        login\n        avatarUrl(size: 40)\n        ... on User {\n          name\n        }\n        ... on Node {\n          __isNode: __typename\n          id\n        }\n      }\n    }\n  }\n}\n"
   }
 };
 })();
 
-(node as any).hash = "32f067c5031e661a110b333cdc8c5999";
+(node as any).hash = "b23f4494104c3710ca0a5a311bbddbff";
 
 export default node;

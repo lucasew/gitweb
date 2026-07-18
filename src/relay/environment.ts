@@ -103,7 +103,8 @@ function createFetch(opts: GitHubClientOptions = {}): FetchFunction {
         );
       }
 
-      const json = (await res.json()) as GraphQLResponse & {
+      const json = (await res.json()) as {
+        data?: Record<string, unknown> | null;
         errors?: { message?: string; type?: string }[];
       };
 
@@ -112,25 +113,36 @@ function createFetch(opts: GitHubClientOptions = {}): FetchFunction {
       }
 
       if (json.errors?.length) {
-        const unique = [...new Set(json.errors.map((e) => e.message ?? 'error'))];
+        const unique = [
+          ...new Set(json.errors.map((e) => e.message ?? 'error')),
+        ];
         const msg = unique.join('; ');
         const resourceLimited = unique.some((m) =>
           /resource limits/i.test(m),
         );
-        if (!('data' in json) || json.data == null) {
+        const isMutation = params.operationKind === 'mutation';
+        const dataObj =
+          json.data && typeof json.data === 'object' ? json.data : null;
+        // GitHub often returns { data: { addPullRequestReview: null }, errors: [...] }
+        // — that must fail so Relay calls onError (not a fake onCompleted success).
+        const mutationPayloadMissing =
+          isMutation &&
+          dataObj != null &&
+          Object.values(dataObj).every((v) => v == null);
+
+        if (isMutation || mutationPayloadMissing || json.data == null) {
           throw new Error(
             resourceLimited
               ? `GitHub GraphQL query too expensive (resource limits). ${msg}`
               : msg,
           );
         }
-        // Partial data: still return so screens can render; log once
         if (resourceLimited) {
           console.warn('GitHub GraphQL resource limits (partial data):', msg);
         }
       }
 
-      return json;
+      return json as GraphQLResponse;
     });
   };
 }

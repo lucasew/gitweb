@@ -161,9 +161,14 @@ const reviewMutation = graphql`
         id
         state
         body
+        bodyHTML
         createdAt
         author {
           login
+          avatarUrl(size: 40)
+          ... on User {
+            name
+          }
         }
       }
     }
@@ -370,8 +375,21 @@ export function PullDetailPage({
                 </div>
                 <ul
                   tabIndex={0}
-                  className="dropdown-content menu bg-base-100 rounded-box z-50 w-52 p-2 shadow-lg border border-base-300 opacity-100"
+                  className="dropdown-content menu bg-base-100 rounded-box z-50 w-64 p-2 shadow-lg border border-base-300 opacity-100"
                 >
+                  <li className="menu-title px-1">
+                    <span>Review summary (optional)</span>
+                  </li>
+                  <li className="disabled !bg-transparent">
+                    <textarea
+                      className="textarea textarea-bordered textarea-sm w-full min-h-16 font-normal"
+                      placeholder="Leave a comment…"
+                      value={reviewBody}
+                      onChange={(e) => setReviewBody(e.target.value)}
+                      onClick={(e) => e.stopPropagation()}
+                      onKeyDown={(e) => e.stopPropagation()}
+                    />
+                  </li>
                   {pendingReview ? (
                     <>
                       <li className="menu-title">
@@ -389,19 +407,40 @@ export function PullDetailPage({
                             type="button"
                             disabled={submitInFlight}
                             onClick={() => {
+                              const body = reviewBody.trim();
+                              if (event === 'COMMENT' && !body) {
+                                toast.error(
+                                  'Comment review needs a body',
+                                  'Add text in the review box on the Conversation tab, or pick Approve / Request changes.',
+                                );
+                                return;
+                              }
                               commitSubmitReview({
                                 variables: {
                                   reviewId: pendingReview.id,
                                   event,
-                                  body: reviewBody.trim() || null,
+                                  body: body || null,
                                 },
-                                onCompleted: () => {
+                                onCompleted: (resp) => {
+                                  if (
+                                    !resp.submitPullRequestReview
+                                      ?.pullRequestReview
+                                  ) {
+                                    toast.error(
+                                      'Submit review failed',
+                                      'GitHub returned no review',
+                                    );
+                                    return;
+                                  }
                                   setReviewBody('');
                                   toast.info(`Review submitted: ${label}`);
                                   refresh();
                                 },
                                 onError: (e) =>
-                                  toast.error('Submit review failed', e.message),
+                                  toast.error(
+                                    'Submit review failed',
+                                    e.message,
+                                  ),
                               });
                             }}
                           >
@@ -433,7 +472,7 @@ export function PullDetailPage({
                   ) : (
                     <>
                       <li className="menu-title">
-                        <span>Start review</span>
+                        <span>Submit review</span>
                       </li>
                       {(
                         [
@@ -447,15 +486,38 @@ export function PullDetailPage({
                             type="button"
                             disabled={reviewInFlight}
                             onClick={() => {
+                              const body = reviewBody.trim();
+                              // COMMENT event requires a body per GitHub API
+                              if (event === 'COMMENT' && !body) {
+                                toast.error(
+                                  'Comment review needs a body',
+                                  'Type feedback in the review box on Conversation, then try again.',
+                                );
+                                return;
+                              }
                               commitReview({
                                 variables: {
                                   id: pr.id,
                                   event,
-                                  body: reviewBody.trim() || null,
+                                  body: body || null,
                                 },
-                                onCompleted: () => {
+                                onCompleted: (resp) => {
+                                  const review =
+                                    resp.addPullRequestReview
+                                      ?.pullRequestReview;
+                                  if (!review) {
+                                    toast.error(
+                                      'Review failed',
+                                      'GitHub returned no review (check permissions / branch rules)',
+                                    );
+                                    return;
+                                  }
                                   setReviewBody('');
-                                  toast.info(`Review: ${label}`);
+                                  toast.info(
+                                    review.state === 'PENDING'
+                                      ? 'Review started (pending)'
+                                      : `Review: ${label} (${review.state})`,
+                                  );
                                   refresh();
                                 },
                                 onError: (e) =>
@@ -477,7 +539,7 @@ export function PullDetailPage({
               <div className="join rounded-full border border-base-300 overflow-hidden bg-base-100">
                 {allowedMethods.length > 0 ? (
                   <select
-                    className="select select-sm join-item border-0 bg-transparent focus:outline-none w-auto max-w-[min(100%,11rem)] rounded-none"
+                    className="select select-sm join-item border-0 bg-base-100 text-base-content focus:outline-none w-auto max-w-[min(100%,11rem)] rounded-none opacity-100"
                     value={activeMergeMethod}
                     disabled={mergeInFlight || merging}
                     onChange={(e) =>
