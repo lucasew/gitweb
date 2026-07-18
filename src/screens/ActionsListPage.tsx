@@ -226,13 +226,17 @@ export function ActionsListPage({ owner, name }: Props) {
                     <Link
                       to="/$owner/$name/actions/runs/$runId"
                       params={{ owner, name, runId: r.runId }}
-                      className="link link-hover font-medium min-w-0 flex-1 pr-2"
+                      className="link link-hover min-w-0 flex-1 pr-2"
                     >
-                      {r.title}
-                      <span className="opacity-50 font-normal font-mono text-xs ms-1.5">
-                        {r.workflowName}
-                        {r.runNumber != null ? ` #${r.runNumber}` : ''}
-                      </span>
+                      <span className="font-semibold">{r.workflowName}</span>
+                      {r.runNumber != null ? (
+                        <span className="opacity-50 font-mono text-xs ms-1">
+                          #{r.runNumber}
+                        </span>
+                      ) : null}
+                      {r.title ? (
+                        <span className="font-normal ms-1.5">{r.title}</span>
+                      ) : null}
                     </Link>
                     <CheckStatusBadge
                       className="shrink-0"
@@ -337,17 +341,20 @@ function collectRuns(data: ActionsListPageQuery$data): RunRow[] {
       )?.status ??
       runs[0]?.status ??
       null;
+    // Label: **workflow** commit (displayTitle is usually the commit subject)
+    const workflowName = wr.workflow?.name?.trim() || 'workflow';
     const title =
-      wr.displayTitle?.trim() ||
-      wr.workflow?.name ||
-      `Run ${wr.runNumber ?? wr.databaseId ?? ''}`;
+      wr.displayTitle?.trim() &&
+      wr.displayTitle.trim() !== workflowName
+        ? wr.displayTitle.trim()
+        : '';
     byId.set(wr.id, {
       key: wr.id,
       runId: wr.id,
       databaseId: wr.databaseId ?? null,
       runNumber: wr.runNumber ?? null,
       title,
-      workflowName: wr.workflow?.name ?? 'workflow',
+      workflowName,
       event: wr.event ?? '',
       status,
       conclusion: suite.conclusion ?? null,

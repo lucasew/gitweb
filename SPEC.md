@@ -85,7 +85,7 @@ Auth model assumes a user who can create a PAT (same mental model as `gh auth to
 | Gaps | **Show affordance → Open on GitHub** (re-run, cancel, workflow_dispatch, secrets, runners, perfect global run index). Go deep later. |
 | Routes | `/owner/repo/actions` list · `/owner/repo/actions/runs/$runId` detail (`runId` = GraphQL node id) · TopBar + ⌘K `/actions` · **PR checks strip** deep-links into the same detail |
 | Live | **GitHub-like:** fast poll while any check/run is non-terminal; slow when idle; pause when tab hidden; focus refetch |
-| Logs | **Low-hanging REST** for job log text (`GET …/actions/jobs/{id}/logs`) + re-fetch while job in progress (not true server SSE). GQL has no step log body. |
+| Logs | **REST** `GET …/actions/jobs/{id}/logs` for **completed** jobs only (GitHub 404/BlobNotFound while running). Live logs → GitHub job URL. Poll API after job ends to pick up the blob. GQL has no step log body. |
 | Writes (GQL) | `approveDeployments` / `rejectDeployments` / `rerequestCheckSuite` when the viewer can |
 | Discovery | No `Repository.workflows` for Actions in GraphQL — list is **best-effort** from recent default-branch commits + open PR head check suites; empty states link to GitHub |
 

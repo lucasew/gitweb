@@ -200,36 +200,79 @@ export async function renderMarkdownGfm(
   return res.text();
 }
 
+export type JobLogsResult =
+  | { kind: 'ok'; text: string }
+  | {
+      /** Logs not uploaded yet (typical while the job is still running). */
+      kind: 'pending';
+      message: string;
+    }
+  | { kind: 'error'; message: string };
+
+function isLogsNotReady(status: number, body: string): boolean {
+  if (status === 404) return true;
+  // GitHub redirects to Azure blob; empty/missing while job runs
+  if (/BlobNotFound|The specified blob does not exist/i.test(body)) return true;
+  if (status === 302 || status === 301) return false;
+  return false;
+}
+
 /**
  * Job logs for a GitHub Actions check run / job (REST — GraphQL has no log body).
- * Follows redirects to the signed log URL. Returns plain text (may be large).
+ * Follows redirects to the signed log URL.
+ *
+ * While a job is in progress the API often 404s / BlobNotFound — that is
+ * expected; use `kind: 'pending'` and open the GitHub job page for live logs.
  */
 export async function fetchActionsJobLogs(
   owner: string,
   repo: string,
   jobId: number,
-): Promise<string> {
+): Promise<JobLogsResult> {
   const token = getToken();
-  if (!token) throw new Error('Not signed in');
+  if (!token) return { kind: 'error', message: 'Not signed in' };
 
-  const res = await fetch(
-    `${API}/repos/${owner}/${repo}/actions/jobs/${jobId}/logs`,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: 'application/vnd.github+json',
-        'X-GitHub-Api-Version': '2022-11-28',
+  try {
+    const res = await fetch(
+      `${API}/repos/${owner}/${repo}/actions/jobs/${jobId}/logs`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/vnd.github+json',
+          'X-GitHub-Api-Version': '2022-11-28',
+        },
+        redirect: 'follow',
       },
-      redirect: 'follow',
-    },
-  );
-  if (!res.ok) {
+    );
     const body = await res.text();
-    throw new Error(`Job logs ${res.status}: ${body.slice(0, 300)}`);
+    if (!res.ok) {
+      if (isLogsNotReady(res.status, body)) {
+        return {
+          kind: 'pending',
+          message:
+            'Job logs are not available via the API until the job finishes. Use the GitHub link for live logs.',
+        };
+      }
+      return {
+        kind: 'error',
+        message: `Job logs ${res.status}: ${body.slice(0, 300)}`,
+      };
+    }
+    // Successful HTTP but body is Azure error XML (some edge cases)
+    if (isLogsNotReady(200, body) && body.includes('<Error>')) {
+      return {
+        kind: 'pending',
+        message:
+          'Log blob not ready yet. Use the GitHub link for live logs.',
+      };
+    }
+    return { kind: 'ok', text: body };
+  } catch (e) {
+    return {
+      kind: 'error',
+      message: e instanceof Error ? e.message : String(e),
+    };
   }
-  const text = await res.text();
-  // Cap display size in callers; still return full for streaming re-fetch
-  return text;
 }
 
 /** GitHub Actions UI for a workflow run (gap stubs). */
@@ -242,6 +285,29 @@ export function githubActionsRunUrl(
     return `https://github.com/${owner}/${repo}/actions/runs/${runDatabaseId}`;
   }
   return `https://github.com/${owner}/${repo}/actions`;
+}
+
+/** GitHub Actions job page (pretty logs UI). */
+export function githubActionsJobUrl(
+  owner: string,
+  repo: string,
+  runDatabaseId: number | null | undefined,
+  jobId: number | null | undefined,
+): string | null {
+  if (runDatabaseId == null || jobId == null) return null;
+  return `https://github.com/${owner}/${repo}/actions/runs/${runDatabaseId}/job/${jobId}`;
+}
+
+/**
+ * Raw job logs API URL (redirects to a short-lived signed URL when fetched with auth).
+ * Useful as a “download / raw” link for tools that send the PAT.
+ */
+export function githubActionsJobLogsApiUrl(
+  owner: string,
+  repo: string,
+  jobId: number,
+): string {
+  return `${API}/repos/${owner}/${repo}/actions/jobs/${jobId}/logs`;
 }
 
 export function githubActionsHomeUrl(owner: string, repo: string): string {

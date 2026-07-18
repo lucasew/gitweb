@@ -20,6 +20,8 @@ import { LoadingBlock } from '@/components/LoadingBlock';
 import { useToast } from '@/lib/toast';
 import {
   fetchActionsJobLogs,
+  githubActionsJobLogsApiUrl,
+  githubActionsJobUrl,
   githubActionsRunUrl,
 } from '@/lib/rest';
 import {
@@ -527,6 +529,7 @@ export function ActionsRunPage({ owner, name, runId }: Props) {
               <JobLogPanel
                 owner={owner}
                 name={name}
+                runDatabaseId={run.databaseId ?? null}
                 jobDatabaseId={selected.databaseId ?? null}
                 jobInProgress={isCheckInProgress(selected.status)}
                 githubRunUrl={ghRun}
@@ -544,63 +547,101 @@ export function ActionsRunPage({ owner, name, runId }: Props) {
 function JobLogPanel({
   owner,
   name,
+  runDatabaseId,
   jobDatabaseId,
   jobInProgress,
   githubRunUrl,
 }: {
   owner: string;
   name: string;
+  runDatabaseId: number | null;
   jobDatabaseId: number | null;
   jobInProgress: boolean;
   githubRunUrl: string;
 }) {
   const [logs, setLogs] = useState<string | null>(null);
+  const [pendingMsg, setPendingMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const jobUiUrl =
+    githubActionsJobUrl(owner, name, runDatabaseId, jobDatabaseId) ??
+    githubRunUrl;
+  const rawLogsUrl =
+    jobDatabaseId != null
+      ? githubActionsJobLogsApiUrl(owner, name, jobDatabaseId)
+      : null;
 
   const load = useCallback(async () => {
     if (jobDatabaseId == null) {
       setErr(null);
       setLogs(null);
+      setPendingMsg(null);
       return;
     }
     setLoading(true);
     setErr(null);
     try {
-      const text = await fetchActionsJobLogs(owner, name, jobDatabaseId);
-      setLogs(text);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : String(e));
-      setLogs(null);
+      const result = await fetchActionsJobLogs(owner, name, jobDatabaseId);
+      if (result.kind === 'ok') {
+        setLogs(result.text);
+        setPendingMsg(null);
+        setErr(null);
+      } else if (result.kind === 'pending') {
+        setPendingMsg(result.message);
+        setErr(null);
+        if (!jobInProgress) {
+          setLogs(null);
+        }
+      } else {
+        setErr(result.message);
+        setPendingMsg(null);
+        setLogs(null);
+      }
     } finally {
       setLoading(false);
     }
-  }, [owner, name, jobDatabaseId]);
+  }, [owner, name, jobDatabaseId, jobInProgress]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
-  // Soft “stream”: re-fetch logs while job is in progress
   useEffect(() => {
-    if (!jobInProgress || jobDatabaseId == null) return;
+    if (jobDatabaseId == null) return;
+    if (!jobInProgress) {
+      const t = window.setTimeout(() => {
+        if (document.visibilityState === 'visible') void load();
+      }, 2000);
+      return () => window.clearTimeout(t);
+    }
     const id = window.setInterval(() => {
       if (document.visibilityState === 'visible') void load();
-    }, 5000);
+    }, 12_000);
     return () => window.clearInterval(id);
   }, [jobInProgress, jobDatabaseId, load]);
 
   const display = useMemo(() => {
     if (!logs) return '';
-    // Keep last ~400KB for UI
     if (logs.length > 400_000) return logs.slice(-400_000);
     return logs;
   }, [logs]);
 
+  const downloadRaw = useCallback(() => {
+    if (!logs) return;
+    const blob = new Blob([logs], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `job-${jobDatabaseId ?? 'logs'}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [logs, jobDatabaseId]);
+
   return (
-    <div className="space-y-1">
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="text-xs font-medium opacity-60">Logs</div>
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center gap-2 text-xs">
+        <div className="font-medium opacity-60">Logs</div>
         <button
           type="button"
           className="btn btn-xs btn-ghost"
@@ -609,35 +650,79 @@ function JobLogPanel({
         >
           {loading ? 'Loading…' : 'Refresh'}
         </button>
+        {logs ? (
+          <button
+            type="button"
+            className="btn btn-xs btn-outline"
+            onClick={downloadRaw}
+          >
+            Download raw
+          </button>
+        ) : null}
+        <ExternalLink
+          className="link link-hover"
+          href={jobUiUrl}
+          title={jobUiUrl}
+        >
+          live
+        </ExternalLink>
+        {rawLogsUrl ? (
+          <ExternalLink
+            className="link link-hover"
+            href={rawLogsUrl}
+            title={`${rawLogsUrl} — needs Authorization: Bearer <PAT>; 404 until job completes`}
+          >
+            raw
+          </ExternalLink>
+        ) : (
+          <span
+            className="opacity-40"
+            title="No job database id on this check run"
+          >
+            raw
+          </span>
+        )}
         {jobInProgress ? (
           <span className="text-[0.65rem] opacity-50">
-            auto-refresh while in progress
+            live stream only on GitHub · API blob after job ends
           </span>
         ) : null}
-        <ActionsGapLink
-          href={githubRunUrl}
-          className="btn btn-xs btn-ghost"
-        >
-          Full logs on GitHub
-        </ActionsGapLink>
       </div>
+
       {jobDatabaseId == null ? (
         <p className="text-xs opacity-50">
-          No job database id — open on GitHub for logs.
+          No job database id — open GUI link above for logs.
         </p>
       ) : err ? (
         <div className="alert alert-warning text-xs py-2">
-          {err}{' '}
-          <ExternalLink className="link" href={githubRunUrl}>
-            GitHub
-          </ExternalLink>
+          {err}
+        </div>
+      ) : pendingMsg && !logs ? (
+        <div className="alert alert-info text-xs py-2 space-y-1">
+          <div>{pendingMsg}</div>
+          <div className="flex flex-wrap gap-x-3 gap-y-1">
+            <ExternalLink className="link" href={jobUiUrl} title={jobUiUrl}>
+              live
+            </ExternalLink>
+            {rawLogsUrl ? (
+              <ExternalLink
+                className="link"
+                href={rawLogsUrl}
+                title={rawLogsUrl}
+              >
+                raw
+              </ExternalLink>
+            ) : null}
+          </div>
         </div>
       ) : loading && !logs ? (
         <LoadingBlock label="Fetching logs…" />
-      ) : (
+      ) : logs ? (
         <pre className="text-[0.7rem] leading-snug font-mono bg-neutral text-neutral-content p-2 rounded-box overflow-auto max-h-[min(50vh,28rem)] whitespace-pre-wrap break-all">
           {display || '(empty)'}
         </pre>
+      ) : (
+        <p className="text-xs opacity-50">No log text yet.</p>
       )}
     </div>
   );
