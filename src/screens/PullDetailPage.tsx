@@ -313,7 +313,7 @@ export function PullDetailPage({
             />
           </Suspense>
         ) : (
-          <div className="max-w-3xl w-full space-y-3">
+          <div className="max-w-3xl w-full mx-auto space-y-3">
             <div className="border border-base-300 rounded-box p-3">
               <div className="mb-2">
                 <AuthorByline
