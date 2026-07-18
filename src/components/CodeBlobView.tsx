@@ -8,7 +8,11 @@ import {
   type LineRange,
 } from '@/lib/permalinks';
 import { useToast } from '@/lib/toast';
-import { getThemePreference } from '@/lib/theme';
+import {
+  getResolvedTheme,
+  subscribeTheme,
+  type ResolvedTheme,
+} from '@/lib/theme';
 
 type Props = {
   owner: string;
@@ -41,14 +45,6 @@ async function copyText(text: string): Promise<boolean> {
   }
 }
 
-function themeMode(): 'light' | 'dark' {
-  const pref = getThemePreference();
-  if (pref === 'light' || pref === 'dark') return pref;
-  return window.matchMedia('(prefers-color-scheme: dark)').matches
-    ? 'dark'
-    : 'light';
-}
-
 /**
  * Full-width source view: line numbers, syntax highlight, line-permalink menu.
  */
@@ -61,7 +57,8 @@ export function CodeBlobView({
   className,
 }: Props) {
   const toast = useToast();
-  const theme = themeMode();
+  const [theme, setTheme] = useState<ResolvedTheme>(() => getResolvedTheme());
+  useEffect(() => subscribeTheme(setTheme), []);
   const { lines } = useMemo(
     () => highlightFileToLines(text, path),
     [text, path],

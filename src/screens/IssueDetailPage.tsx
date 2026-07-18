@@ -185,7 +185,7 @@ export function IssueDetailPage({ owner, name, number }: Props) {
           {editingTitle ? (
             <div className="flex flex-wrap gap-2 grow w-full min-w-0">
               <input
-                className="input input-bordered input-sm flex-1 min-w-0"
+                className="input input-bordered input-sm flex-1 min-w-0 bg-base-100 text-base-content border-base-300"
                 value={titleDraft}
                 onChange={(e) => setTitleDraft(e.target.value)}
               />
@@ -398,7 +398,7 @@ export function IssueDetailPage({ owner, name, number }: Props) {
 
         <div className="space-y-2">
           <textarea
-            className="textarea textarea-bordered w-full min-h-24"
+            className="textarea textarea-bordered w-full min-h-24 bg-base-100 text-base-content border-base-300"
             placeholder="Comment"
             value={body}
             onChange={(e) => setBody(e.target.value)}

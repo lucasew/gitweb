@@ -630,7 +630,7 @@ export function PullDetailPage({
                   </li>
                   <li className="disabled !bg-transparent">
                     <textarea
-                      className="textarea textarea-bordered textarea-sm w-full min-h-16 font-normal"
+                      className="textarea textarea-bordered textarea-sm w-full min-h-16 font-normal bg-base-100 text-base-content border-base-300"
                       placeholder="Leave a comment…"
                       value={reviewBody}
                       onChange={(e) => setReviewBody(e.target.value)}
@@ -894,7 +894,7 @@ export function PullDetailPage({
                   ) : null}
                 </div>
                 <textarea
-                  className="textarea textarea-bordered w-full min-h-20"
+                  className="textarea textarea-bordered w-full min-h-20 bg-base-100 text-base-content border-base-300"
                   placeholder="Optional review body"
                   value={reviewBody}
                   onChange={(e) => setReviewBody(e.target.value)}

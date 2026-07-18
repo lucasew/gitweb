@@ -23,7 +23,7 @@ export function LoginScreen({ onSignedIn }: Props) {
             <span className="label-text text-sm">PAT</span>
             <input
               type="password"
-              className="input input-bordered w-full"
+              className="input input-bordered w-full bg-base-100 text-base-content border-base-300"
               autoComplete="off"
               value={pat}
               onChange={(e) => setPat(e.target.value)}

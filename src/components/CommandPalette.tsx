@@ -216,7 +216,7 @@ export function CommandPalette({ open, onOpenChange }: Props) {
                 ? 'Tab expands path · /pr → PRs  ·  Enter opens'
                 : 'Tab expands /pr /issues  ·  Enter opens  ·  owner/repo'
             }
-            className="input input-bordered w-full rounded-none border-0 border-b border-base-300 focus:outline-none"
+            className="input input-bordered w-full rounded-none border-0 border-b border-base-300 focus:outline-none bg-base-100 text-base-content"
             autoFocus
             disabled={busy}
           />

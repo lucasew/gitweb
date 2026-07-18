@@ -1,7 +1,53 @@
 @import 'tailwindcss';
 @plugin "@tailwindcss/typography";
 @plugin "daisyui" {
+  /* data-theme on <html> is source of truth (applyTheme). Do not rely only on prefers-color-scheme. */
   themes: light --default, dark --prefersdark;
+}
+
+/* Keep native form controls aligned with app theme (OS override case). */
+html[data-theme='dark'] {
+  color-scheme: dark;
+}
+html[data-theme='light'] {
+  color-scheme: light;
+}
+
+/*
+ * @git-diff-view sets `.diff-line-widget-wrapper * { color: initial }` which
+ * forces canvastext (often black) and fights daisyUI when OS is light but the
+ * app is dark (or the reverse). Re-bind widgets + form controls to theme tokens.
+ */
+.diff-line-widget-wrapper {
+  color: var(--color-base-content);
+  color-scheme: inherit;
+}
+.diff-line-widget-wrapper * {
+  color: inherit;
+}
+.diff-line-widget-wrapper .textarea,
+.diff-line-widget-wrapper textarea,
+.diff-line-widget-wrapper .input,
+.diff-line-widget-wrapper input:not([type='checkbox']):not([type='radio']),
+.diff-line-widget-wrapper .select,
+.diff-line-widget-wrapper select {
+  background-color: var(--color-base-100);
+  color: var(--color-base-content);
+  border-color: var(--color-base-300);
+}
+.diff-line-widget-wrapper .textarea::placeholder,
+.diff-line-widget-wrapper textarea::placeholder,
+.diff-line-widget-wrapper .input::placeholder,
+.diff-line-widget-wrapper input::placeholder {
+  color: color-mix(in oklab, var(--color-base-content) 45%, transparent);
+}
+
+/* App form controls: same tokens so OS scheme cannot wash out contrast */
+.textarea,
+.input,
+.select,
+select.opacity-100 {
+  color-scheme: inherit;
 }
 
 /* Density: padding scales with rem; more room below md via max-width query in rem */
@@ -214,6 +260,14 @@ select.opacity-100 option {
   background-color: var(--color-base-100);
   color: var(--color-base-content);
   opacity: 1;
+}
+
+/* dropdown menus inside foreign wrappers (cmdk, diff widgets) */
+.menu,
+[cmdk-root],
+[cmdk-input],
+[cmdk-list] {
+  color-scheme: inherit;
 }
 
 /* Full-file code browser (hljs tokens; GitHub-ish light/dark) */

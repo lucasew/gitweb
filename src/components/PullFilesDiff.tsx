@@ -6,7 +6,11 @@ import { Link } from '@tanstack/react-router';
 import { fetchPullFiles, type RestPullFile } from '@/lib/rest';
 import { LoadingBlock } from '@/components/LoadingBlock';
 import { ErrorBanner } from '@/components/ErrorBanner';
-import { getThemePreference } from '@/lib/theme';
+import {
+  getResolvedTheme,
+  subscribeTheme,
+  type ResolvedTheme,
+} from '@/lib/theme';
 import { ExternalLink } from '@/components/ExternalLink';
 import { useToast } from '@/lib/toast';
 import type { PullFilesDiffThreadMutation } from './__generated__/PullFilesDiffThreadMutation.graphql';
@@ -83,14 +87,6 @@ const threadMutation = graphql`
   }
 `;
 
-function themeMode(): 'light' | 'dark' {
-  const pref = getThemePreference();
-  if (pref === 'light' || pref === 'dark') return pref;
-  return window.matchMedia('(prefers-color-scheme: dark)').matches
-    ? 'dark'
-    : 'light';
-}
-
 function sideToDiffSide(side: SplitSide): 'LEFT' | 'RIGHT' {
   return side === SplitSide.old ? 'LEFT' : 'RIGHT';
 }
@@ -121,7 +117,7 @@ function CommentWidget({
         {path}:{lineNumber} ({sideToDiffSide(side)})
       </div>
       <textarea
-        className="textarea textarea-bordered textarea-sm w-full min-h-20"
+        className="textarea textarea-bordered textarea-sm w-full min-h-20 bg-base-100 text-base-content border-base-300"
         placeholder="Line comment (starts or continues a review thread)"
         value={body}
         autoFocus
@@ -188,7 +184,8 @@ function SafeDiffView({
   pullRequestId: string;
   onThreadsChanged?: () => void;
 }) {
-  const theme = themeMode();
+  const [theme, setTheme] = useState<ResolvedTheme>(() => getResolvedTheme());
+  useEffect(() => subscribeTheme(setTheme), []);
 
   const { diffFile, parseError } = useMemo(() => {
     try {
