@@ -56,7 +56,7 @@ export function TopBar({
             to="/"
             className="btn btn-ghost btn-sm font-semibold px-2 shrink-0"
           >
-            gitweb
+            ghweb
           </Link>
 
           {repo ? (

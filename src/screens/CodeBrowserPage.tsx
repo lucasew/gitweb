@@ -178,7 +178,7 @@ export function CodeBrowserPage({ owner, name, refName, path, mode }: Props) {
     if (text.length > MAX_TEXT) {
       return (
         <div className="p-[clamp(0.75rem,2vw,1.25rem)] alert alert-warning">
-          File too large to render in gitweb ({text.length} chars).{' '}
+          File too large to render in ghweb ({text.length} chars).{' '}
           <ExternalLink
             className="link"
             href={`https://github.com/${owner}/${name}/blob/${refName}/${path}`}

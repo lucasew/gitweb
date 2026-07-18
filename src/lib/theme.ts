@@ -1,4 +1,5 @@
-const THEME_KEY = 'gitweb.theme';
+const THEME_KEY = 'ghweb.theme';
+const LEGACY_THEME_KEY = 'gitweb.theme';
 
 export type ThemePreference = 'system' | 'light' | 'dark';
 
@@ -6,6 +7,12 @@ export function getThemePreference(): ThemePreference {
   try {
     const v = localStorage.getItem(THEME_KEY);
     if (v === 'light' || v === 'dark' || v === 'system') return v;
+    const legacy = localStorage.getItem(LEGACY_THEME_KEY);
+    if (legacy === 'light' || legacy === 'dark' || legacy === 'system') {
+      localStorage.setItem(THEME_KEY, legacy);
+      localStorage.removeItem(LEGACY_THEME_KEY);
+      return legacy;
+    }
   } catch {
     /* ignore */
   }
@@ -14,6 +21,11 @@ export function getThemePreference(): ThemePreference {
 
 export function setThemePreference(pref: ThemePreference): void {
   localStorage.setItem(THEME_KEY, pref);
+  try {
+    localStorage.removeItem(LEGACY_THEME_KEY);
+  } catch {
+    /* ignore */
+  }
   applyTheme(pref);
 }
 

@@ -4,8 +4,8 @@ import { cn } from '@/lib/cls';
 import 'github-markdown-css/github-markdown.css';
 
 // External anchors from GitHub HTML → new tab (SPEC)
-if (typeof window !== 'undefined' && !('_gitwebPurifyHook' in DOMPurify)) {
-  (DOMPurify as unknown as { _gitwebPurifyHook?: boolean })._gitwebPurifyHook =
+if (typeof window !== 'undefined' && !('_ghwebPurifyHook' in DOMPurify)) {
+  (DOMPurify as unknown as { _ghwebPurifyHook?: boolean })._ghwebPurifyHook =
     true;
   DOMPurify.addHook('afterSanitizeAttributes', (node) => {
     if (node.tagName === 'A' && node.hasAttribute('href')) {
@@ -55,7 +55,7 @@ export function GithubMarkdown({
   return (
     <div
       className={cn(
-        'markdown-body gitweb-markdown min-w-0 w-full max-w-none',
+        'markdown-body ghweb-markdown min-w-0 w-full max-w-none',
         className,
       )}
       // GitHub bodyHTML + DOMPurify

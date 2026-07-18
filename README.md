@@ -1,4 +1,4 @@
-# gitweb
+# ghweb
 
 Alternative GitHub UI — faster triage tool. **AGPL-3.0-or-later** (commercial
 licensing available; see `COMMERCIAL.md`).

@@ -13,7 +13,7 @@ export function LoginScreen({ onSignedIn }: Props) {
     <div className="min-h-screen flex items-center justify-center p-4 bg-base-200">
       <div className="card bg-base-100 w-full max-w-md shadow border border-base-300">
         <div className="card-body gap-3">
-          <h1 className="card-title text-xl">gitweb</h1>
+          <h1 className="card-title text-xl">ghweb</h1>
           <p className="text-sm opacity-80">
             Paste a GitHub personal access token (same idea as{' '}
             <code className="text-xs">gh auth token</code>). Stored in{' '}

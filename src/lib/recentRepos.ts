@@ -1,4 +1,5 @@
-const KEY = 'gitweb.recentRepos';
+const KEY = 'ghweb.recentRepos';
+const LEGACY_KEY = 'gitweb.recentRepos';
 const MAX = 40;
 
 export type RecentRepo = {
@@ -21,6 +22,7 @@ export function rememberRepo(owner: string, name: string): void {
     );
     const next = [entry, ...prev].slice(0, MAX);
     sessionStorage.setItem(KEY, JSON.stringify(next));
+    sessionStorage.removeItem(LEGACY_KEY);
   } catch {
     /* ignore */
   }
@@ -28,7 +30,15 @@ export function rememberRepo(owner: string, name: string): void {
 
 export function listRecentRepos(): RecentRepo[] {
   try {
-    const raw = sessionStorage.getItem(KEY);
+    let raw = sessionStorage.getItem(KEY);
+    if (!raw) {
+      const legacy = sessionStorage.getItem(LEGACY_KEY);
+      if (legacy) {
+        sessionStorage.setItem(KEY, legacy);
+        sessionStorage.removeItem(LEGACY_KEY);
+        raw = legacy;
+      }
+    }
     if (!raw) return [];
     const parsed = JSON.parse(raw) as RecentRepo[];
     return Array.isArray(parsed) ? parsed : [];

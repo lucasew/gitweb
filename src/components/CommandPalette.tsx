@@ -208,11 +208,11 @@ function buildItems(
   }
 
   // Global
-  if (!slash && fuzzyMatch('home gitweb', q)) {
+  if (!slash && fuzzyMatch('home ghweb', q)) {
     items.push({
       id: 'home',
       label: 'Home',
-      value: 'home gitweb',
+      value: 'home ghweb',
       path: '/',
       group: 'Navigate',
       icon: Home,

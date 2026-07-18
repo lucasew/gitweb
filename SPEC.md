@@ -1,4 +1,4 @@
-# gitweb — Product & Engineering Spec
+# ghweb — Product & Engineering Spec
 
 Status: **accepted** (shared understanding, 2026-07-18)  
 Visual design: deferred to a later **impeccable** pass (`PRODUCT.md` / `DESIGN.md`); this document is the contract for product, architecture, and behavior.
@@ -7,7 +7,7 @@ Visual design: deferred to a later **impeccable** pass (`PRODUCT.md` / `DESIGN.m
 
 ## 1. Vision
 
-**gitweb** is a full-frontend alternative UI for GitHub: faster, less buggy, and more trustworthy than github.com for day-to-day work.
+**ghweb** is a full-frontend alternative UI for GitHub: faster, less buggy, and more trustworthy than github.com for day-to-day work.
 
 It is a **tool to get things done**, not a marketing clone of GitHub. North star is broad surface coverage (repos, search, Actions, PRs, issues, discussions, …). **v1 is intentionally narrower** and must feel obviously better on the paths it ships.
 
@@ -59,7 +59,7 @@ Auth model assumes a user who can create a PAT (same mental model as `gh auth to
 | **Issues** | **Power triage** — view + broad writes (see §5.3) |
 | **Pull requests** | **Power triage** — conversation, files (read), reviews, merge when allowed |
 | **Search** | **GraphQL `search` only** — repos, issues, PRs, users/orgs (types the schema supports well). No v1 code search |
-| **Chrome** | Avatar (viewer), **breadcrumb** `gitweb > owner/repo` + code/issues/PRs icons (no sidebar), command palette (`/code` `/issues` `/prs`) |
+| **Chrome** | Avatar (viewer), **breadcrumb** `ghweb > owner/repo` + code/issues/PRs icons (no sidebar), command palette (`/code` `/issues` `/prs`) |
 
 ### 5.2 Later (roadmap, not v1 gates)
 
@@ -475,6 +475,7 @@ Decisions locked in the 2026-07 grill session:
 19. PR **Files** tab is full-width
 20. Chrome: breadcrumb + section icons; no sidebar; ⌘K slash commands; line/hunk comments via DiffView widgets + review threads (`target=_blank` + `noopener noreferrer`)  
 21. Status badge colors: SPEC §13.1 (changes requested = solid warning; pending = outline warning; merging = info; closed = error; approved/open = success; draft/commented = ghost; merged = purple only)  
+22. Product name: **ghweb** (formerly gitweb); storage keys `ghweb.*` with one-shot migrate from `gitweb.*`  
 
 
 ---
