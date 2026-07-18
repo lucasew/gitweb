@@ -47,16 +47,17 @@ export function PullsListPage({ owner, name }: Props) {
           if (!pr) return null;
           return (
             <li key={pr.id} className="dense-row">
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-start gap-2 w-full">
                 <Link
                   to="/$owner/$name/pull/$number"
                   params={{ owner, name, number: String(pr.number) }}
-                  className="link link-hover font-medium min-w-0"
+                  className="link link-hover font-medium min-w-0 flex-1"
                 >
                   <span className="opacity-50 font-normal">#{pr.number}</span>{' '}
                   {pr.title}
                 </Link>
                 <PrStateBadge
+                  className="shrink-0 ml-auto"
                   state={pr.state}
                   merged={pr.merged}
                   isDraft={pr.isDraft}
