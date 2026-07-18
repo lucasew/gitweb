@@ -350,6 +350,7 @@ v1 should not need REST for the core loop. When later features need it (Actions,
 |----------|--------|
 | Primary | **PAT paste** (classic or fine-grained; user-managed scopes) |
 | Optional later | OAuth **device flow** if low-friction and scopes suffice |
+| Guest / anonymous | **Out of scope forever under GraphQL-first** — app hard-gates on a token; no public-read-without-auth |
 | Accounts | Single account model (no switcher in v1) |
 | Tab model | **Independent per browser tab** — no cross-tab Relay sync |
 | Token storage | **`sessionStorage`** only (survives refresh in-tab; dies with tab) |
@@ -459,6 +460,7 @@ Decisions locked in the 2026-07 grill session:
 2. React + Vite + Tailwind + daisyUI; Vercel SPA  
 3. GraphQL-first + Relay + broad optimistics  
 4. PAT paste; sessionStorage; per-tab isolation; single account  
+4b. **No guest mode** — GraphQL requires auth; unauthenticated / REST-guest browse discarded  
 5. Direct browser → GitHub API  
 6. Path parity + cleaner search/filter URLs  
 7. Hybrid tool home  
