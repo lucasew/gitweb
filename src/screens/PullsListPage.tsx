@@ -1,6 +1,7 @@
 import { graphql, useLazyLoadQuery } from 'react-relay';
 import { Link } from '@tanstack/react-router';
 import { AuthorByline } from '@/components/AuthorByline';
+import { PrStateBadge } from '@/components/PrStateBadge';
 import type { PullsListPageQuery } from './__generated__/PullsListPageQuery.graphql';
 
 const query = graphql`
@@ -24,6 +25,8 @@ const query = graphql`
             }
           }
           isDraft
+          state
+          merged
         }
       }
     }
@@ -44,14 +47,21 @@ export function PullsListPage({ owner, name }: Props) {
           if (!pr) return null;
           return (
             <li key={pr.id} className="dense-row">
-              <Link
-                to="/$owner/$name/pull/$number"
-                params={{ owner, name, number: String(pr.number) }}
-                className="link link-hover font-medium"
-              >
-                <span className="opacity-50 font-normal">#{pr.number}</span>{' '}
-                {pr.title}
-              </Link>
+              <div className="flex flex-wrap items-center gap-2">
+                <Link
+                  to="/$owner/$name/pull/$number"
+                  params={{ owner, name, number: String(pr.number) }}
+                  className="link link-hover font-medium min-w-0"
+                >
+                  <span className="opacity-50 font-normal">#{pr.number}</span>{' '}
+                  {pr.title}
+                </Link>
+                <PrStateBadge
+                  state={pr.state}
+                  merged={pr.merged}
+                  isDraft={pr.isDraft}
+                />
+              </div>
               <div className="mt-1">
                 <AuthorByline
                   author={
@@ -66,7 +76,7 @@ export function PullsListPage({ owner, name }: Props) {
                         }
                       : null
                   }
-                  meta={`${pr.isDraft ? 'draft · ' : ''}${new Date(pr.updatedAt).toLocaleString()}`}
+                  meta={new Date(pr.updatedAt).toLocaleString()}
                 />
               </div>
             </li>

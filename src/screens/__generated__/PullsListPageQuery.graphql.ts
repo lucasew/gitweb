@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<d5c111f13c91475ad6430258c714bada>>
+ * @generated SignedSource<<2307d106cbe3602f673c82e038e9f05e>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -9,6 +9,7 @@
 // @ts-nocheck
 
 import { ConcreteRequest } from 'relay-runtime';
+export type PullRequestState = "CLOSED" | "MERGED" | "OPEN" | "%future added value";
 export type PullsListPageQuery$variables = {
   name: string;
   owner: string;
@@ -24,7 +25,9 @@ export type PullsListPageQuery$data = {
         } | null | undefined;
         readonly id: string;
         readonly isDraft: boolean;
+        readonly merged: boolean;
         readonly number: number;
+        readonly state: PullRequestState;
         readonly title: string;
         readonly updatedAt: any;
       } | null | undefined> | null | undefined;
@@ -147,6 +150,20 @@ v11 = {
   "kind": "ScalarField",
   "name": "isDraft",
   "storageKey": null
+},
+v12 = {
+  "alias": null,
+  "args": null,
+  "kind": "ScalarField",
+  "name": "state",
+  "storageKey": null
+},
+v13 = {
+  "alias": null,
+  "args": null,
+  "kind": "ScalarField",
+  "name": "merged",
+  "storageKey": null
 };
 return {
   "fragment": {
@@ -200,7 +217,9 @@ return {
                     ],
                     "storageKey": null
                   },
-                  (v11/*: any*/)
+                  (v11/*: any*/),
+                  (v12/*: any*/),
+                  (v13/*: any*/)
                 ],
                 "storageKey": null
               }
@@ -280,7 +299,9 @@ return {
                     ],
                     "storageKey": null
                   },
-                  (v11/*: any*/)
+                  (v11/*: any*/),
+                  (v12/*: any*/),
+                  (v13/*: any*/)
                 ],
                 "storageKey": null
               }
@@ -294,16 +315,16 @@ return {
     ]
   },
   "params": {
-    "cacheID": "33246dbde9b81c2090a2128450fff8bc",
+    "cacheID": "9b05f80fbace6314e30e83e53b7c1849",
     "id": null,
     "metadata": {},
     "name": "PullsListPageQuery",
     "operationKind": "query",
-    "text": "query PullsListPageQuery(\n  $owner: String!\n  $name: String!\n) {\n  repository(owner: $owner, name: $name) {\n    pullRequests(first: 40, states: OPEN, orderBy: {field: UPDATED_AT, direction: DESC}) {\n      nodes {\n        id\n        number\n        title\n        updatedAt\n        author {\n          __typename\n          login\n          avatarUrl(size: 40)\n          ... on User {\n            name\n          }\n          ... on Node {\n            __isNode: __typename\n            id\n          }\n        }\n        isDraft\n      }\n    }\n    id\n  }\n}\n"
+    "text": "query PullsListPageQuery(\n  $owner: String!\n  $name: String!\n) {\n  repository(owner: $owner, name: $name) {\n    pullRequests(first: 40, states: OPEN, orderBy: {field: UPDATED_AT, direction: DESC}) {\n      nodes {\n        id\n        number\n        title\n        updatedAt\n        author {\n          __typename\n          login\n          avatarUrl(size: 40)\n          ... on User {\n            name\n          }\n          ... on Node {\n            __isNode: __typename\n            id\n          }\n        }\n        isDraft\n        state\n        merged\n      }\n    }\n    id\n  }\n}\n"
   }
 };
 })();
 
-(node as any).hash = "3d0b6a61a872f457779a9480218b6f83";
+(node as any).hash = "9c10feff8e4c9c24190e4fea17acb521";
 
 export default node;

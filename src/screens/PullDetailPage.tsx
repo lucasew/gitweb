@@ -18,6 +18,7 @@ import { useLiveQuery } from '@/lib/useLiveQuery';
 import { LoadingBlock } from '@/components/LoadingBlock';
 import { ExternalLink } from '@/components/ExternalLink';
 import { AuthorByline } from '@/components/AuthorByline';
+import { PrStateBadge } from '@/components/PrStateBadge';
 
 const PullFilesDiff = lazy(() =>
   import('@/components/PullFilesDiff').then((m) => ({
@@ -277,10 +278,12 @@ export function PullDetailPage({
             {pr.title}{' '}
             <span className="opacity-50 font-normal">#{pr.number}</span>
           </h1>
-          <span className="badge badge-sm">
-            {pr.merged ? 'MERGED' : merging || mergeInFlight ? 'MERGING…' : pr.state}
-            {pr.isDraft ? ' · draft' : ''}
-          </span>
+          <PrStateBadge
+            state={pr.state}
+            merged={pr.merged}
+            isDraft={pr.isDraft}
+            merging={merging || mergeInFlight}
+          />
         </div>
         <div className="text-xs opacity-60 font-mono">
           {pr.headRefName} → {pr.baseRefName}
