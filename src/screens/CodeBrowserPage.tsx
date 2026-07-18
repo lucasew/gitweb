@@ -113,8 +113,8 @@ export function CodeBrowserPage({ owner, name, refName, path, mode }: Props) {
 
   if (obj.__typename === 'Tree' && 'entries' in obj) {
     return (
-      <div className="p-[clamp(0.75rem,2vw,1.25rem)] w-full min-w-0 space-y-2">
-        <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-col w-full min-w-0 h-full min-h-0">
+        <div className="flex flex-wrap items-center gap-2 px-[clamp(0.75rem,2vw,1.25rem)] py-2 border-b border-base-300 bg-base-200/60 shrink-0">
           <PathBreadcrumb
             className="flex-1 min-w-0"
             owner={owner}
@@ -126,6 +126,7 @@ export function CodeBrowserPage({ owner, name, refName, path, mode }: Props) {
             GitHub
           </ExternalLink>
         </div>
+        <div className="flex-1 min-h-0 overflow-auto p-[clamp(0.75rem,2vw,1.25rem)]">
         <ul className="card bg-base-100 border border-base-300 divide-y divide-base-300 dense-list w-full">
           {path ? (
             <li className="dense-row">
@@ -169,6 +170,7 @@ export function CodeBrowserPage({ owner, name, refName, path, mode }: Props) {
             );
           })}
         </ul>
+        </div>
       </div>
     );
   }
@@ -199,7 +201,7 @@ export function CodeBrowserPage({ owner, name, refName, path, mode }: Props) {
 
     return (
       <div className="flex flex-col w-full min-w-0 h-full min-h-0 overflow-hidden">
-        <div className="flex flex-wrap items-center gap-2 px-[clamp(0.75rem,2vw,1.25rem)] py-2 border-b border-base-300 bg-base-100 shrink-0 z-10">
+        <div className="flex flex-wrap items-center gap-2 px-[clamp(0.75rem,2vw,1.25rem)] py-2 border-b border-base-300 bg-base-200/60 shrink-0 z-10">
           <PathBreadcrumb
             className="flex-1 min-w-0"
             owner={owner}

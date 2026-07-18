@@ -15,12 +15,7 @@ import {
 } from '@/lib/theme';
 import { subscribeRateLimit, type RateLimitSnapshot } from '@/relay/environment';
 import { cn } from '@/lib/cls';
-import {
-  parseCodeLocation,
-  parseRepoFromPath,
-  rememberRepo,
-} from '@/lib/recentRepos';
-import { PathBreadcrumb } from '@/components/PathBreadcrumb';
+import { parseRepoFromPath, rememberRepo } from '@/lib/recentRepos';
 
 type Props = {
   onOpenPalette: () => void;
@@ -41,7 +36,6 @@ export function TopBar({
   const [rl, setRl] = useState<RateLimitSnapshot | null>(null);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const repo = parseRepoFromPath(pathname);
-  const codeLoc = parseCodeLocation(pathname);
 
   useEffect(() => subscribeRateLimit(setRl), []);
 
@@ -50,19 +44,13 @@ export function TopBar({
   }, [repo?.owner, repo?.name]);
 
   const section = repoSection(pathname, repo);
-  const showPathCrumbs = codeLoc != null;
 
   return (
     <header className="sticky top-0 z-40 border-b border-base-300 bg-base-200">
       <div className="navbar min-h-12 gap-1 px-2 w-full min-w-0">
         <nav
           aria-label="Breadcrumb"
-          className={cn(
-            'flex items-center gap-0.5 min-w-0',
-            showPathCrumbs
-              ? 'flex-1 max-w-none overflow-x-auto'
-              : 'flex-none max-w-[min(100%,55%)]',
-          )}
+          className="flex-none flex items-center gap-0.5 min-w-0 max-w-[min(100%,55%)]"
         >
           <Link
             to="/"
@@ -80,7 +68,7 @@ export function TopBar({
               <Link
                 to="/$login"
                 params={{ login: repo.owner }}
-                className="btn btn-ghost btn-sm px-1.5 min-w-0 font-normal opacity-70 max-w-[8rem] truncate shrink-0"
+                className="btn btn-ghost btn-sm px-1.5 min-w-0 font-normal opacity-70 max-w-[8rem] truncate"
                 title={repo.owner}
               >
                 {repo.owner}
@@ -92,7 +80,7 @@ export function TopBar({
               <Link
                 to="/$owner/$name"
                 params={{ owner: repo.owner, name: repo.name }}
-                className="btn btn-ghost btn-sm px-1.5 min-w-0 font-medium max-w-[10rem] truncate shrink-0"
+                className="btn btn-ghost btn-sm px-1.5 min-w-0 font-medium max-w-[10rem] truncate"
                 title={repo.name}
               >
                 {repo.name}
@@ -126,62 +114,22 @@ export function TopBar({
                   icon={GitPullRequest}
                 />
               </div>
-
-              {codeLoc ? (
-                <>
-                  <ChevronRight
-                    className="size-4 opacity-40 shrink-0 ms-1"
-                    aria-hidden
-                  />
-                  <PathBreadcrumb
-                    dense
-                    className="min-w-0 flex-1"
-                    owner={codeLoc.owner}
-                    name={codeLoc.name}
-                    refName={codeLoc.refName}
-                    path={codeLoc.path}
-                    isBlob={codeLoc.mode === 'blob'}
-                  />
-                </>
-              ) : null}
             </>
           ) : null}
         </nav>
 
-        <div
-          className={cn(
-            'flex justify-center px-1 min-w-0',
-            showPathCrumbs
-              ? 'flex-none w-auto shrink-0'
-              : 'flex-1',
-          )}
-        >
+        <div className="flex-1 flex justify-center px-1 min-w-0">
           <button
             type="button"
             className={cn(
               'btn btn-sm btn-ghost border border-base-300 bg-base-100',
-              'justify-start gap-2 font-normal text-base-content/60',
-              showPathCrumbs
-                ? 'btn-square sm:w-auto sm:px-3'
-                : 'w-full max-w-md',
+              'w-full max-w-md justify-start gap-2 font-normal text-base-content/60',
             )}
             onClick={onOpenPalette}
-            title="Jump… /code /issues /prs"
           >
             <Search className="size-4 shrink-0" />
-            <span
-              className={cn(
-                'truncate',
-                showPathCrumbs && 'hidden sm:inline',
-              )}
-            >
-              Jump…
-            </span>
-            {!showPathCrumbs ? (
-              <kbd className="kbd kbd-sm ms-auto hidden sm:inline-flex">
-                ⌘K
-              </kbd>
-            ) : null}
+            <span className="truncate">Jump… /code /issues /prs</span>
+            <kbd className="kbd kbd-sm ms-auto hidden sm:inline-flex">⌘K</kbd>
           </button>
         </div>
 
