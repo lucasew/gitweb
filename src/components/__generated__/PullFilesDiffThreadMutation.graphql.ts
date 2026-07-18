@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<3742702738b591367d802d863c92fedf>>
+ * @generated SignedSource<<4ec79277a7792d684a51b18e815c7541>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -26,6 +26,7 @@ export type PullFilesDiffThreadMutation$data = {
             readonly login: string;
           } | null | undefined;
           readonly body: string;
+          readonly bodyHTML: any;
           readonly id: string;
         } | null | undefined> | null | undefined;
       };
@@ -159,6 +160,13 @@ v13 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
+  "name": "bodyHTML",
+  "storageKey": null
+},
+v14 = {
+  "alias": null,
+  "args": null,
+  "kind": "ScalarField",
   "name": "login",
   "storageKey": null
 };
@@ -214,6 +222,7 @@ return {
                     "selections": [
                       (v6/*: any*/),
                       (v12/*: any*/),
+                      (v13/*: any*/),
                       {
                         "alias": null,
                         "args": null,
@@ -222,7 +231,7 @@ return {
                         "name": "author",
                         "plural": false,
                         "selections": [
-                          (v13/*: any*/)
+                          (v14/*: any*/)
                         ],
                         "storageKey": null
                       }
@@ -293,6 +302,7 @@ return {
                     "selections": [
                       (v6/*: any*/),
                       (v12/*: any*/),
+                      (v13/*: any*/),
                       {
                         "alias": null,
                         "args": null,
@@ -308,7 +318,7 @@ return {
                             "name": "__typename",
                             "storageKey": null
                           },
-                          (v13/*: any*/),
+                          (v14/*: any*/),
                           {
                             "kind": "InlineFragment",
                             "selections": [
@@ -335,16 +345,16 @@ return {
     ]
   },
   "params": {
-    "cacheID": "9ac625530db89d04aa945f9c3a343f90",
+    "cacheID": "bb66f79c7e5c079aa6696597b3f3fa25",
     "id": null,
     "metadata": {},
     "name": "PullFilesDiffThreadMutation",
     "operationKind": "mutation",
-    "text": "mutation PullFilesDiffThreadMutation(\n  $pullRequestId: ID!\n  $path: String!\n  $body: String!\n  $line: Int!\n  $side: DiffSide!\n) {\n  addPullRequestReviewThread(input: {pullRequestId: $pullRequestId, path: $path, body: $body, line: $line, side: $side, subjectType: LINE}) {\n    thread {\n      id\n      path\n      line\n      diffSide\n      isResolved\n      comments(first: 5) {\n        nodes {\n          id\n          body\n          author {\n            __typename\n            login\n            ... on Node {\n              __isNode: __typename\n              id\n            }\n          }\n        }\n      }\n    }\n  }\n}\n"
+    "text": "mutation PullFilesDiffThreadMutation(\n  $pullRequestId: ID!\n  $path: String!\n  $body: String!\n  $line: Int!\n  $side: DiffSide!\n) {\n  addPullRequestReviewThread(input: {pullRequestId: $pullRequestId, path: $path, body: $body, line: $line, side: $side, subjectType: LINE}) {\n    thread {\n      id\n      path\n      line\n      diffSide\n      isResolved\n      comments(first: 5) {\n        nodes {\n          id\n          body\n          bodyHTML\n          author {\n            __typename\n            login\n            ... on Node {\n              __isNode: __typename\n              id\n            }\n          }\n        }\n      }\n    }\n  }\n}\n"
   }
 };
 })();
 
-(node as any).hash = "6ea1ed477ae40ff6822b8e4ea33c1e64";
+(node as any).hash = "cc2d259a7a5edea0e65fe78ac2d397fb";
 
 export default node;

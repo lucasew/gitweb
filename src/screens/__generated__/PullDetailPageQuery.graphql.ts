@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<8a208a4e5e76a7429537cfb7ec8c29e4>>
+ * @generated SignedSource<<0e02b5877404a74544d09f55b9172ec5>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -30,6 +30,7 @@ export type PullDetailPageQuery$data = {
       } | null | undefined;
       readonly baseRefName: string;
       readonly body: string;
+      readonly bodyHTML: any;
       readonly comments: {
         readonly nodes: ReadonlyArray<{
           readonly author: {
@@ -38,6 +39,7 @@ export type PullDetailPageQuery$data = {
             readonly name?: string | null | undefined;
           } | null | undefined;
           readonly body: string;
+          readonly bodyHTML: any;
           readonly createdAt: any;
           readonly id: string;
         } | null | undefined> | null | undefined;
@@ -57,6 +59,7 @@ export type PullDetailPageQuery$data = {
                 readonly login: string;
               } | null | undefined;
               readonly body: string;
+              readonly bodyHTML: any;
               readonly id: string;
             } | null | undefined> | null | undefined;
           };
@@ -76,6 +79,7 @@ export type PullDetailPageQuery$data = {
             readonly name?: string | null | undefined;
           } | null | undefined;
           readonly body: string;
+          readonly bodyHTML: any;
           readonly createdAt: any;
           readonly id: string;
           readonly state: PullRequestReviewState;
@@ -190,52 +194,59 @@ v13 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
-  "name": "state",
+  "name": "bodyHTML",
   "storageKey": null
 },
 v14 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
-  "name": "isDraft",
+  "name": "state",
   "storageKey": null
 },
 v15 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
-  "name": "merged",
+  "name": "isDraft",
   "storageKey": null
 },
 v16 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
-  "name": "mergeable",
+  "name": "merged",
   "storageKey": null
 },
 v17 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
-  "name": "url",
+  "name": "mergeable",
   "storageKey": null
 },
 v18 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
-  "name": "createdAt",
+  "name": "url",
   "storageKey": null
 },
 v19 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
-  "name": "login",
+  "name": "createdAt",
   "storageKey": null
 },
 v20 = {
+  "alias": null,
+  "args": null,
+  "kind": "ScalarField",
+  "name": "login",
+  "storageKey": null
+},
+v21 = {
   "alias": null,
   "args": [
     {
@@ -248,7 +259,7 @@ v20 = {
   "name": "avatarUrl",
   "storageKey": "avatarUrl(size:64)"
 },
-v21 = {
+v22 = {
   "kind": "InlineFragment",
   "selections": [
     {
@@ -262,28 +273,28 @@ v21 = {
   "type": "User",
   "abstractKey": null
 },
-v22 = {
+v23 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
   "name": "baseRefName",
   "storageKey": null
 },
-v23 = {
+v24 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
   "name": "headRefName",
   "storageKey": null
 },
-v24 = [
+v25 = [
   {
     "kind": "Literal",
     "name": "first",
     "value": 20
   }
 ],
-v25 = {
+v26 = {
   "alias": null,
   "args": [
     {
@@ -296,7 +307,7 @@ v25 = {
   "name": "avatarUrl",
   "storageKey": "avatarUrl(size:40)"
 },
-v26 = {
+v27 = {
   "alias": null,
   "args": null,
   "concreteType": null,
@@ -304,69 +315,69 @@ v26 = {
   "name": "author",
   "plural": false,
   "selections": [
-    (v19/*: any*/),
-    (v25/*: any*/),
-    (v21/*: any*/)
+    (v20/*: any*/),
+    (v26/*: any*/),
+    (v22/*: any*/)
   ],
   "storageKey": null
 },
-v27 = [
+v28 = [
   {
     "kind": "Literal",
     "name": "first",
     "value": 40
   }
 ],
-v28 = [
+v29 = [
   {
     "kind": "Literal",
     "name": "first",
     "value": 80
   }
 ],
-v29 = {
+v30 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
   "name": "path",
   "storageKey": null
 },
-v30 = {
+v31 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
   "name": "line",
   "storageKey": null
 },
-v31 = {
+v32 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
   "name": "startLine",
   "storageKey": null
 },
-v32 = {
+v33 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
   "name": "diffSide",
   "storageKey": null
 },
-v33 = {
+v34 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
   "name": "isResolved",
   "storageKey": null
 },
-v34 = {
+v35 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
   "name": "__typename",
   "storageKey": null
 },
-v35 = {
+v36 = {
   "kind": "InlineFragment",
   "selections": [
     (v9/*: any*/)
@@ -374,7 +385,7 @@ v35 = {
   "type": "Node",
   "abstractKey": "__isNode"
 },
-v36 = {
+v37 = {
   "alias": null,
   "args": null,
   "concreteType": null,
@@ -382,11 +393,11 @@ v36 = {
   "name": "author",
   "plural": false,
   "selections": [
-    (v34/*: any*/),
-    (v19/*: any*/),
-    (v25/*: any*/),
-    (v21/*: any*/),
-    (v35/*: any*/)
+    (v35/*: any*/),
+    (v20/*: any*/),
+    (v26/*: any*/),
+    (v22/*: any*/),
+    (v36/*: any*/)
   ],
   "storageKey": null
 };
@@ -431,6 +442,7 @@ return {
               (v16/*: any*/),
               (v17/*: any*/),
               (v18/*: any*/),
+              (v19/*: any*/),
               {
                 "alias": null,
                 "args": null,
@@ -439,17 +451,17 @@ return {
                 "name": "author",
                 "plural": false,
                 "selections": [
-                  (v19/*: any*/),
                   (v20/*: any*/),
-                  (v21/*: any*/)
+                  (v21/*: any*/),
+                  (v22/*: any*/)
                 ],
                 "storageKey": null
               },
-              (v22/*: any*/),
               (v23/*: any*/),
+              (v24/*: any*/),
               {
                 "alias": null,
-                "args": (v24/*: any*/),
+                "args": (v25/*: any*/),
                 "concreteType": "PullRequestReviewConnection",
                 "kind": "LinkedField",
                 "name": "reviews",
@@ -464,10 +476,11 @@ return {
                     "plural": true,
                     "selections": [
                       (v9/*: any*/),
-                      (v13/*: any*/),
-                      (v26/*: any*/),
+                      (v14/*: any*/),
+                      (v27/*: any*/),
                       (v12/*: any*/),
-                      (v18/*: any*/)
+                      (v13/*: any*/),
+                      (v19/*: any*/)
                     ],
                     "storageKey": null
                   }
@@ -476,7 +489,7 @@ return {
               },
               {
                 "alias": null,
-                "args": (v27/*: any*/),
+                "args": (v28/*: any*/),
                 "concreteType": "IssueCommentConnection",
                 "kind": "LinkedField",
                 "name": "comments",
@@ -492,8 +505,9 @@ return {
                     "selections": [
                       (v9/*: any*/),
                       (v12/*: any*/),
-                      (v18/*: any*/),
-                      (v26/*: any*/)
+                      (v13/*: any*/),
+                      (v19/*: any*/),
+                      (v27/*: any*/)
                     ],
                     "storageKey": null
                   }
@@ -502,7 +516,7 @@ return {
               },
               {
                 "alias": null,
-                "args": (v28/*: any*/),
+                "args": (v29/*: any*/),
                 "concreteType": "PullRequestReviewThreadConnection",
                 "kind": "LinkedField",
                 "name": "reviewThreads",
@@ -517,14 +531,14 @@ return {
                     "plural": true,
                     "selections": [
                       (v9/*: any*/),
-                      (v29/*: any*/),
                       (v30/*: any*/),
                       (v31/*: any*/),
                       (v32/*: any*/),
                       (v33/*: any*/),
+                      (v34/*: any*/),
                       {
                         "alias": null,
-                        "args": (v24/*: any*/),
+                        "args": (v25/*: any*/),
                         "concreteType": "PullRequestReviewCommentConnection",
                         "kind": "LinkedField",
                         "name": "comments",
@@ -540,6 +554,7 @@ return {
                             "selections": [
                               (v9/*: any*/),
                               (v12/*: any*/),
+                              (v13/*: any*/),
                               {
                                 "alias": null,
                                 "args": null,
@@ -548,7 +563,7 @@ return {
                                 "name": "author",
                                 "plural": false,
                                 "selections": [
-                                  (v19/*: any*/)
+                                  (v20/*: any*/)
                                 ],
                                 "storageKey": null
                               }
@@ -614,6 +629,7 @@ return {
               (v16/*: any*/),
               (v17/*: any*/),
               (v18/*: any*/),
+              (v19/*: any*/),
               {
                 "alias": null,
                 "args": null,
@@ -622,19 +638,19 @@ return {
                 "name": "author",
                 "plural": false,
                 "selections": [
-                  (v34/*: any*/),
-                  (v19/*: any*/),
+                  (v35/*: any*/),
                   (v20/*: any*/),
                   (v21/*: any*/),
-                  (v35/*: any*/)
+                  (v22/*: any*/),
+                  (v36/*: any*/)
                 ],
                 "storageKey": null
               },
-              (v22/*: any*/),
               (v23/*: any*/),
+              (v24/*: any*/),
               {
                 "alias": null,
-                "args": (v24/*: any*/),
+                "args": (v25/*: any*/),
                 "concreteType": "PullRequestReviewConnection",
                 "kind": "LinkedField",
                 "name": "reviews",
@@ -649,10 +665,11 @@ return {
                     "plural": true,
                     "selections": [
                       (v9/*: any*/),
-                      (v13/*: any*/),
-                      (v36/*: any*/),
+                      (v14/*: any*/),
+                      (v37/*: any*/),
                       (v12/*: any*/),
-                      (v18/*: any*/)
+                      (v13/*: any*/),
+                      (v19/*: any*/)
                     ],
                     "storageKey": null
                   }
@@ -661,7 +678,7 @@ return {
               },
               {
                 "alias": null,
-                "args": (v27/*: any*/),
+                "args": (v28/*: any*/),
                 "concreteType": "IssueCommentConnection",
                 "kind": "LinkedField",
                 "name": "comments",
@@ -677,8 +694,9 @@ return {
                     "selections": [
                       (v9/*: any*/),
                       (v12/*: any*/),
-                      (v18/*: any*/),
-                      (v36/*: any*/)
+                      (v13/*: any*/),
+                      (v19/*: any*/),
+                      (v37/*: any*/)
                     ],
                     "storageKey": null
                   }
@@ -687,7 +705,7 @@ return {
               },
               {
                 "alias": null,
-                "args": (v28/*: any*/),
+                "args": (v29/*: any*/),
                 "concreteType": "PullRequestReviewThreadConnection",
                 "kind": "LinkedField",
                 "name": "reviewThreads",
@@ -702,14 +720,14 @@ return {
                     "plural": true,
                     "selections": [
                       (v9/*: any*/),
-                      (v29/*: any*/),
                       (v30/*: any*/),
                       (v31/*: any*/),
                       (v32/*: any*/),
                       (v33/*: any*/),
+                      (v34/*: any*/),
                       {
                         "alias": null,
-                        "args": (v24/*: any*/),
+                        "args": (v25/*: any*/),
                         "concreteType": "PullRequestReviewCommentConnection",
                         "kind": "LinkedField",
                         "name": "comments",
@@ -725,6 +743,7 @@ return {
                             "selections": [
                               (v9/*: any*/),
                               (v12/*: any*/),
+                              (v13/*: any*/),
                               {
                                 "alias": null,
                                 "args": null,
@@ -733,9 +752,9 @@ return {
                                 "name": "author",
                                 "plural": false,
                                 "selections": [
-                                  (v34/*: any*/),
-                                  (v19/*: any*/),
-                                  (v35/*: any*/)
+                                  (v35/*: any*/),
+                                  (v20/*: any*/),
+                                  (v36/*: any*/)
                                 ],
                                 "storageKey": null
                               }
@@ -761,16 +780,16 @@ return {
     ]
   },
   "params": {
-    "cacheID": "724c4b67140a2879417627cba0af5ed1",
+    "cacheID": "f698e3c0e9a32d8d7cbcf2f95a8a3378",
     "id": null,
     "metadata": {},
     "name": "PullDetailPageQuery",
     "operationKind": "query",
-    "text": "query PullDetailPageQuery(\n  $owner: String!\n  $name: String!\n  $number: Int!\n) {\n  repository(owner: $owner, name: $name) {\n    mergeCommitAllowed\n    squashMergeAllowed\n    rebaseMergeAllowed\n    viewerDefaultMergeMethod\n    pullRequest(number: $number) {\n      id\n      number\n      title\n      body\n      state\n      isDraft\n      merged\n      mergeable\n      url\n      createdAt\n      author {\n        __typename\n        login\n        avatarUrl(size: 64)\n        ... on User {\n          name\n        }\n        ... on Node {\n          __isNode: __typename\n          id\n        }\n      }\n      baseRefName\n      headRefName\n      reviews(first: 20) {\n        nodes {\n          id\n          state\n          author {\n            __typename\n            login\n            avatarUrl(size: 40)\n            ... on User {\n              name\n            }\n            ... on Node {\n              __isNode: __typename\n              id\n            }\n          }\n          body\n          createdAt\n        }\n      }\n      comments(first: 40) {\n        nodes {\n          id\n          body\n          createdAt\n          author {\n            __typename\n            login\n            avatarUrl(size: 40)\n            ... on User {\n              name\n            }\n            ... on Node {\n              __isNode: __typename\n              id\n            }\n          }\n        }\n      }\n      reviewThreads(first: 80) {\n        nodes {\n          id\n          path\n          line\n          startLine\n          diffSide\n          isResolved\n          comments(first: 20) {\n            nodes {\n              id\n              body\n              author {\n                __typename\n                login\n                ... on Node {\n                  __isNode: __typename\n                  id\n                }\n              }\n            }\n          }\n        }\n      }\n    }\n    id\n  }\n}\n"
+    "text": "query PullDetailPageQuery(\n  $owner: String!\n  $name: String!\n  $number: Int!\n) {\n  repository(owner: $owner, name: $name) {\n    mergeCommitAllowed\n    squashMergeAllowed\n    rebaseMergeAllowed\n    viewerDefaultMergeMethod\n    pullRequest(number: $number) {\n      id\n      number\n      title\n      body\n      bodyHTML\n      state\n      isDraft\n      merged\n      mergeable\n      url\n      createdAt\n      author {\n        __typename\n        login\n        avatarUrl(size: 64)\n        ... on User {\n          name\n        }\n        ... on Node {\n          __isNode: __typename\n          id\n        }\n      }\n      baseRefName\n      headRefName\n      reviews(first: 20) {\n        nodes {\n          id\n          state\n          author {\n            __typename\n            login\n            avatarUrl(size: 40)\n            ... on User {\n              name\n            }\n            ... on Node {\n              __isNode: __typename\n              id\n            }\n          }\n          body\n          bodyHTML\n          createdAt\n        }\n      }\n      comments(first: 40) {\n        nodes {\n          id\n          body\n          bodyHTML\n          createdAt\n          author {\n            __typename\n            login\n            avatarUrl(size: 40)\n            ... on User {\n              name\n            }\n            ... on Node {\n              __isNode: __typename\n              id\n            }\n          }\n        }\n      }\n      reviewThreads(first: 80) {\n        nodes {\n          id\n          path\n          line\n          startLine\n          diffSide\n          isResolved\n          comments(first: 20) {\n            nodes {\n              id\n              body\n              bodyHTML\n              author {\n                __typename\n                login\n                ... on Node {\n                  __isNode: __typename\n                  id\n                }\n              }\n            }\n          }\n        }\n      }\n    }\n    id\n  }\n}\n"
   }
 };
 })();
 
-(node as any).hash = "513651c266913fb4db97d75c03aa4384";
+(node as any).hash = "a14ef0cb78eb23a76eccf9e415ef0372";
 
 export default node;

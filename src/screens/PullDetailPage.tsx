@@ -7,8 +7,6 @@ import {
 } from 'react-relay';
 import { lazy, Suspense, useState } from 'react';
 import { Link } from '@tanstack/react-router';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
 import type { PullDetailPageQuery } from './__generated__/PullDetailPageQuery.graphql';
 import type { PullDetailPageMergeMutation } from './__generated__/PullDetailPageMergeMutation.graphql';
 import type { PullDetailPageCloseMutation } from './__generated__/PullDetailPageCloseMutation.graphql';
@@ -18,6 +16,7 @@ import { useLiveQuery } from '@/lib/useLiveQuery';
 import { LoadingBlock } from '@/components/LoadingBlock';
 import { ExternalLink } from '@/components/ExternalLink';
 import { AuthorByline } from '@/components/AuthorByline';
+import { GithubMarkdown } from '@/components/GithubMarkdown';
 import { PrStateBadge } from '@/components/PrStateBadge';
 
 const PullFilesDiff = lazy(() =>
@@ -38,6 +37,7 @@ const query = graphql`
         number
         title
         body
+        bodyHTML
         state
         isDraft
         merged
@@ -65,6 +65,7 @@ const query = graphql`
               }
             }
             body
+            bodyHTML
             createdAt
           }
         }
@@ -72,6 +73,7 @@ const query = graphql`
           nodes {
             id
             body
+            bodyHTML
             createdAt
             author {
               login
@@ -94,6 +96,7 @@ const query = graphql`
               nodes {
                 id
                 body
+                bodyHTML
                 author {
                   login
                 }
@@ -236,6 +239,7 @@ export function PullDetailPage({
             .map((c) => ({
               id: c!.id,
               body: c!.body,
+              bodyHTML: (c as { bodyHTML?: string | null }).bodyHTML ?? null,
               authorLogin: c!.author?.login ?? null,
             })) ?? [],
       })) ?? [];
@@ -333,11 +337,7 @@ export function PullDetailPage({
                   meta={new Date(pr.createdAt).toLocaleString()}
                 />
               </div>
-              <div className="prose prose-sm max-w-none">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                  {pr.body || '_No description_'}
-                </ReactMarkdown>
-              </div>
+              <GithubMarkdown html={pr.bodyHTML} text={pr.body} />
             </div>
 
             <div>
@@ -361,11 +361,9 @@ export function PullDetailPage({
                         }
                         meta={r.state}
                       />
-                      {r.body ? (
-                        <div className="prose prose-sm max-w-none mt-1">
-                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                            {r.body}
-                          </ReactMarkdown>
+                      {r.body || r.bodyHTML ? (
+                        <div className="mt-1">
+                          <GithubMarkdown html={r.bodyHTML} text={r.body} />
                         </div>
                       ) : null}
                     </li>
@@ -398,11 +396,7 @@ export function PullDetailPage({
                       meta={new Date(c.createdAt).toLocaleString()}
                     />
                   </div>
-                  <div className="prose prose-sm max-w-none">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {c.body}
-                    </ReactMarkdown>
-                  </div>
+                  <GithubMarkdown html={c.bodyHTML} text={c.body} />
                 </div>
               );
             })}

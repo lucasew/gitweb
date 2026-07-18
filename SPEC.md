@@ -217,7 +217,7 @@ Use the shared `ExternalLink` component (or equivalent) so this is not forgotten
 | CSS / components | Tailwind + daisyUI | No second UI kit |
 | Icons | lucide-react | |
 | Command palette | cmdk | Style with daisyUI |
-| Markdown bodies | react-markdown + remark-gfm | Issue/PR/README |
+| Markdown bodies | **GraphQL `bodyHTML`** (GFM) + DOMPurify; REST `/markdown` for raw files | Full GitHub-rendered GFM |
 | **PR / commit diffs** | **`@git-diff-view/react`** | Unified + split, virtualization-friendly, GitHub-like; feed GitHub `patch` / file contents — do not hand-roll diff UI |
 | Dates | `Intl` first; date-fns only if needed | Prefer zero dep |
 | className merge | clsx (+ tailwind-merge if needed) | |

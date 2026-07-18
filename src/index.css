@@ -18,3 +18,40 @@
     @apply py-[0.625rem] text-base leading-normal;
   }
 }
+
+/* GitHub-rendered GFM (bodyHTML) — follow daisyUI theme tokens */
+.gitweb-markdown.markdown-body {
+  background: transparent;
+  color: inherit;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+.gitweb-markdown.markdown-body a {
+  color: var(--color-primary);
+}
+.gitweb-markdown.markdown-body pre,
+.gitweb-markdown.markdown-body code {
+  background-color: var(--color-base-200);
+}
+.gitweb-markdown.markdown-body pre {
+  border-radius: var(--radius-box, 0.5rem);
+}
+.gitweb-markdown.markdown-body table tr {
+  background-color: transparent;
+  border-top-color: var(--color-base-300);
+}
+.gitweb-markdown.markdown-body table tr:nth-child(2n) {
+  background-color: color-mix(in oklab, var(--color-base-200) 60%, transparent);
+}
+.gitweb-markdown.markdown-body blockquote {
+  color: color-mix(in oklab, var(--color-base-content) 70%, transparent);
+  border-left-color: var(--color-base-300);
+}
+.gitweb-markdown.markdown-body hr {
+  background-color: var(--color-base-300);
+}
+.gitweb-markdown.markdown-body img {
+  max-width: 100%;
+  height: auto;
+}
+/* Open markdown links in new tab via CSS can't; fix in DOMPurify hook below if needed */

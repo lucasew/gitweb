@@ -1,9 +1,11 @@
 import { graphql, useLazyLoadQuery } from 'react-relay';
 import { Link } from '@tanstack/react-router';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
 import type { RepoPageQuery } from './__generated__/RepoPageQuery.graphql';
 import { ExternalLink } from '@/components/ExternalLink';
+import { GithubMarkdown } from '@/components/GithubMarkdown';
+import { renderMarkdownGfm } from '@/lib/rest';
+import { LoadingBlock } from '@/components/LoadingBlock';
+import { useEffect, useState } from 'react';
 
 const query = graphql`
   query RepoPageQuery($owner: String!, $name: String!) {
@@ -143,10 +145,36 @@ export function RepoPage({ owner, name }: Props) {
       </div>
 
       {readme ? (
-        <article className="prose prose-sm max-w-none bg-base-100 border border-base-300 rounded-box p-4">
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>{readme}</ReactMarkdown>
+        <article className="bg-base-100 border border-base-300 rounded-box p-[clamp(0.75rem,2vw,1.25rem)] w-full min-w-0">
+          <RepoReadme htmlContext={`${owner}/${name}`} markdown={readme} />
         </article>
       ) : null}
     </div>
   );
+}
+
+function RepoReadme({
+  markdown,
+  htmlContext,
+}: {
+  markdown: string;
+  htmlContext: string;
+}) {
+  const [html, setHtml] = useState<string | null>(null);
+  useEffect(() => {
+    let c = false;
+    void renderMarkdownGfm(markdown, htmlContext).then(
+      (h) => {
+        if (!c) setHtml(h);
+      },
+      () => {
+        if (!c) setHtml(null);
+      },
+    );
+    return () => {
+      c = true;
+    };
+  }, [markdown, htmlContext]);
+  if (html == null) return <LoadingBlock label="Rendering README…" />;
+  return <GithubMarkdown html={html} text={markdown} />;
 }

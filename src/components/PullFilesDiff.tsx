@@ -10,6 +10,7 @@ import { ExternalLink } from '@/components/ExternalLink';
 import { useToast } from '@/lib/toast';
 import type { PullFilesDiffThreadMutation } from './__generated__/PullFilesDiffThreadMutation.graphql';
 import { cn } from '@/lib/cls';
+import { GithubMarkdown } from '@/components/GithubMarkdown';
 
 export type ReviewThreadSummary = {
   id: string;
@@ -21,6 +22,7 @@ export type ReviewThreadSummary = {
   comments: Array<{
     id: string;
     body: string;
+    bodyHTML?: string | null;
     authorLogin: string | null;
   }>;
 };
@@ -63,6 +65,7 @@ const threadMutation = graphql`
           nodes {
             id
             body
+            bodyHTML
             author {
               login
             }
@@ -246,7 +249,7 @@ function FileDiff({
                       <span className="text-xs opacity-60">
                         @{c.authorLogin ?? 'ghost'}
                       </span>
-                      <div className="whitespace-pre-wrap text-sm">{c.body}</div>
+                      <GithubMarkdown html={c.bodyHTML} text={c.body} />
                     </div>
                   ))}
                 </div>

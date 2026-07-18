@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<ea2f9db91d73ce3fc42d662b706b4c87>>
+ * @generated SignedSource<<7f1f574fa3f299426fe198f3723144b2>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -24,6 +24,7 @@ export type IssueDetailPageCommentMutation$data = {
           readonly name?: string | null | undefined;
         } | null | undefined;
         readonly body: string;
+        readonly bodyHTML: any;
         readonly createdAt: any;
         readonly id: string;
       } | null | undefined;
@@ -89,17 +90,24 @@ v6 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
-  "name": "createdAt",
+  "name": "bodyHTML",
   "storageKey": null
 },
 v7 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
-  "name": "login",
+  "name": "createdAt",
   "storageKey": null
 },
 v8 = {
+  "alias": null,
+  "args": null,
+  "kind": "ScalarField",
+  "name": "login",
+  "storageKey": null
+},
+v9 = {
   "alias": null,
   "args": [
     {
@@ -112,7 +120,7 @@ v8 = {
   "name": "avatarUrl",
   "storageKey": "avatarUrl(size:40)"
 },
-v9 = {
+v10 = {
   "kind": "InlineFragment",
   "selections": [
     {
@@ -164,6 +172,7 @@ return {
                   (v4/*: any*/),
                   (v5/*: any*/),
                   (v6/*: any*/),
+                  (v7/*: any*/),
                   {
                     "alias": null,
                     "args": null,
@@ -172,9 +181,9 @@ return {
                     "name": "author",
                     "plural": false,
                     "selections": [
-                      (v7/*: any*/),
                       (v8/*: any*/),
-                      (v9/*: any*/)
+                      (v9/*: any*/),
+                      (v10/*: any*/)
                     ],
                     "storageKey": null
                   }
@@ -228,6 +237,7 @@ return {
                   (v4/*: any*/),
                   (v5/*: any*/),
                   (v6/*: any*/),
+                  (v7/*: any*/),
                   {
                     "alias": null,
                     "args": null,
@@ -243,9 +253,9 @@ return {
                         "name": "__typename",
                         "storageKey": null
                       },
-                      (v7/*: any*/),
                       (v8/*: any*/),
                       (v9/*: any*/),
+                      (v10/*: any*/),
                       {
                         "kind": "InlineFragment",
                         "selections": [
@@ -269,16 +279,16 @@ return {
     ]
   },
   "params": {
-    "cacheID": "c35c08467b6ee2a06139428ab70cd136",
+    "cacheID": "c1b16846b9ac20c25ab0951198f444a9",
     "id": null,
     "metadata": {},
     "name": "IssueDetailPageCommentMutation",
     "operationKind": "mutation",
-    "text": "mutation IssueDetailPageCommentMutation(\n  $id: ID!\n  $body: String!\n) {\n  addComment(input: {subjectId: $id, body: $body}) {\n    commentEdge {\n      cursor\n      node {\n        id\n        body\n        createdAt\n        author {\n          __typename\n          login\n          avatarUrl(size: 40)\n          ... on User {\n            name\n          }\n          ... on Node {\n            __isNode: __typename\n            id\n          }\n        }\n      }\n    }\n  }\n}\n"
+    "text": "mutation IssueDetailPageCommentMutation(\n  $id: ID!\n  $body: String!\n) {\n  addComment(input: {subjectId: $id, body: $body}) {\n    commentEdge {\n      cursor\n      node {\n        id\n        body\n        bodyHTML\n        createdAt\n        author {\n          __typename\n          login\n          avatarUrl(size: 40)\n          ... on User {\n            name\n          }\n          ... on Node {\n            __isNode: __typename\n            id\n          }\n        }\n      }\n    }\n  }\n}\n"
   }
 };
 })();
 
-(node as any).hash = "3ca1d1954de6ca6c00aa32c550936a1e";
+(node as any).hash = "f7214c37973bea1e80f3aa60ea2ef35d";
 
 export default node;

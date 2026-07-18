@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<4d4673d2be765a3f7c8249876cc18d82>>
+ * @generated SignedSource<<65632fbcbdaee5c78d66ad20cede48a7>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -32,6 +32,7 @@ export type IssueDetailPageQuery$data = {
         readonly name?: string | null | undefined;
       } | null | undefined;
       readonly body: string;
+      readonly bodyHTML: any;
       readonly closedAt: any | null | undefined;
       readonly comments: {
         readonly edges: ReadonlyArray<{
@@ -42,6 +43,7 @@ export type IssueDetailPageQuery$data = {
               readonly name?: string | null | undefined;
             } | null | undefined;
             readonly body: string;
+            readonly bodyHTML: any;
             readonly createdAt: any;
             readonly id: string;
           } | null | undefined;
@@ -137,52 +139,59 @@ v9 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
-  "name": "state",
+  "name": "bodyHTML",
   "storageKey": null
 },
 v10 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
-  "name": "stateReason",
+  "name": "state",
   "storageKey": null
 },
 v11 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
-  "name": "createdAt",
+  "name": "stateReason",
   "storageKey": null
 },
 v12 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
-  "name": "updatedAt",
+  "name": "createdAt",
   "storageKey": null
 },
 v13 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
-  "name": "closedAt",
+  "name": "updatedAt",
   "storageKey": null
 },
 v14 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
-  "name": "url",
+  "name": "closedAt",
   "storageKey": null
 },
 v15 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
-  "name": "login",
+  "name": "url",
   "storageKey": null
 },
 v16 = {
+  "alias": null,
+  "args": null,
+  "kind": "ScalarField",
+  "name": "login",
+  "storageKey": null
+},
+v17 = {
   "alias": null,
   "args": [
     {
@@ -195,22 +204,22 @@ v16 = {
   "name": "avatarUrl",
   "storageKey": "avatarUrl(size:64)"
 },
-v17 = {
+v18 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
   "name": "name",
   "storageKey": null
 },
-v18 = {
+v19 = {
   "kind": "InlineFragment",
   "selections": [
-    (v17/*: any*/)
+    (v18/*: any*/)
   ],
   "type": "User",
   "abstractKey": null
 },
-v19 = {
+v20 = {
   "alias": null,
   "args": [
     {
@@ -233,7 +242,7 @@ v19 = {
       "plural": true,
       "selections": [
         (v5/*: any*/),
-        (v17/*: any*/),
+        (v18/*: any*/),
         {
           "alias": null,
           "args": null,
@@ -247,7 +256,7 @@ v19 = {
   ],
   "storageKey": "labels(first:20)"
 },
-v20 = {
+v21 = {
   "alias": null,
   "args": [
     {
@@ -270,7 +279,7 @@ v20 = {
       "plural": true,
       "selections": [
         (v5/*: any*/),
-        (v15/*: any*/),
+        (v16/*: any*/),
         {
           "alias": null,
           "args": null,
@@ -284,7 +293,7 @@ v20 = {
   ],
   "storageKey": "assignees(first:10)"
 },
-v21 = {
+v22 = {
   "alias": null,
   "args": [
     {
@@ -297,21 +306,21 @@ v21 = {
   "name": "avatarUrl",
   "storageKey": "avatarUrl(size:40)"
 },
-v22 = {
+v23 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
   "name": "__typename",
   "storageKey": null
 },
-v23 = {
+v24 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
   "name": "cursor",
   "storageKey": null
 },
-v24 = {
+v25 = {
   "alias": null,
   "args": null,
   "concreteType": "PageInfo",
@@ -336,7 +345,7 @@ v24 = {
   ],
   "storageKey": null
 },
-v25 = {
+v26 = {
   "kind": "InlineFragment",
   "selections": [
     (v5/*: any*/)
@@ -344,7 +353,7 @@ v25 = {
   "type": "Node",
   "abstractKey": "__isNode"
 },
-v26 = [
+v27 = [
   {
     "kind": "Literal",
     "name": "first",
@@ -388,6 +397,7 @@ return {
               (v12/*: any*/),
               (v13/*: any*/),
               (v14/*: any*/),
+              (v15/*: any*/),
               {
                 "alias": null,
                 "args": null,
@@ -396,14 +406,14 @@ return {
                 "name": "author",
                 "plural": false,
                 "selections": [
-                  (v15/*: any*/),
                   (v16/*: any*/),
-                  (v18/*: any*/)
+                  (v17/*: any*/),
+                  (v19/*: any*/)
                 ],
                 "storageKey": null
               },
-              (v19/*: any*/),
               (v20/*: any*/),
+              (v21/*: any*/),
               {
                 "alias": "comments",
                 "args": null,
@@ -430,7 +440,8 @@ return {
                         "selections": [
                           (v5/*: any*/),
                           (v8/*: any*/),
-                          (v11/*: any*/),
+                          (v9/*: any*/),
+                          (v12/*: any*/),
                           {
                             "alias": null,
                             "args": null,
@@ -439,21 +450,21 @@ return {
                             "name": "author",
                             "plural": false,
                             "selections": [
-                              (v15/*: any*/),
-                              (v21/*: any*/),
-                              (v18/*: any*/)
+                              (v16/*: any*/),
+                              (v22/*: any*/),
+                              (v19/*: any*/)
                             ],
                             "storageKey": null
                           },
-                          (v22/*: any*/)
+                          (v23/*: any*/)
                         ],
                         "storageKey": null
                       },
-                      (v23/*: any*/)
+                      (v24/*: any*/)
                     ],
                     "storageKey": null
                   },
-                  (v24/*: any*/)
+                  (v25/*: any*/)
                 ],
                 "storageKey": null
               }
@@ -503,6 +514,7 @@ return {
               (v12/*: any*/),
               (v13/*: any*/),
               (v14/*: any*/),
+              (v15/*: any*/),
               {
                 "alias": null,
                 "args": null,
@@ -511,19 +523,19 @@ return {
                 "name": "author",
                 "plural": false,
                 "selections": [
-                  (v22/*: any*/),
-                  (v15/*: any*/),
+                  (v23/*: any*/),
                   (v16/*: any*/),
-                  (v18/*: any*/),
-                  (v25/*: any*/)
+                  (v17/*: any*/),
+                  (v19/*: any*/),
+                  (v26/*: any*/)
                 ],
                 "storageKey": null
               },
-              (v19/*: any*/),
               (v20/*: any*/),
+              (v21/*: any*/),
               {
                 "alias": null,
-                "args": (v26/*: any*/),
+                "args": (v27/*: any*/),
                 "concreteType": "IssueCommentConnection",
                 "kind": "LinkedField",
                 "name": "comments",
@@ -547,7 +559,8 @@ return {
                         "selections": [
                           (v5/*: any*/),
                           (v8/*: any*/),
-                          (v11/*: any*/),
+                          (v9/*: any*/),
+                          (v12/*: any*/),
                           {
                             "alias": null,
                             "args": null,
@@ -556,29 +569,29 @@ return {
                             "name": "author",
                             "plural": false,
                             "selections": [
+                              (v23/*: any*/),
+                              (v16/*: any*/),
                               (v22/*: any*/),
-                              (v15/*: any*/),
-                              (v21/*: any*/),
-                              (v18/*: any*/),
-                              (v25/*: any*/)
+                              (v19/*: any*/),
+                              (v26/*: any*/)
                             ],
                             "storageKey": null
                           },
-                          (v22/*: any*/)
+                          (v23/*: any*/)
                         ],
                         "storageKey": null
                       },
-                      (v23/*: any*/)
+                      (v24/*: any*/)
                     ],
                     "storageKey": null
                   },
-                  (v24/*: any*/)
+                  (v25/*: any*/)
                 ],
                 "storageKey": "comments(first:50)"
               },
               {
                 "alias": null,
-                "args": (v26/*: any*/),
+                "args": (v27/*: any*/),
                 "filters": null,
                 "handle": "connection",
                 "key": "IssueDetailPage_comments",
@@ -595,7 +608,7 @@ return {
     ]
   },
   "params": {
-    "cacheID": "50a574d13571018edfefa921e7a1df42",
+    "cacheID": "ffa5f43094aa323cbd24d425303e9fcd",
     "id": null,
     "metadata": {
       "connection": [
@@ -613,11 +626,11 @@ return {
     },
     "name": "IssueDetailPageQuery",
     "operationKind": "query",
-    "text": "query IssueDetailPageQuery(\n  $owner: String!\n  $name: String!\n  $number: Int!\n) {\n  repository(owner: $owner, name: $name) {\n    issue(number: $number) {\n      id\n      number\n      title\n      body\n      state\n      stateReason\n      createdAt\n      updatedAt\n      closedAt\n      url\n      author {\n        __typename\n        login\n        avatarUrl(size: 64)\n        ... on User {\n          name\n        }\n        ... on Node {\n          __isNode: __typename\n          id\n        }\n      }\n      labels(first: 20) {\n        nodes {\n          id\n          name\n          color\n        }\n      }\n      assignees(first: 10) {\n        nodes {\n          id\n          login\n          avatarUrl\n        }\n      }\n      comments(first: 50) {\n        edges {\n          node {\n            id\n            body\n            createdAt\n            author {\n              __typename\n              login\n              avatarUrl(size: 40)\n              ... on User {\n                name\n              }\n              ... on Node {\n                __isNode: __typename\n                id\n              }\n            }\n            __typename\n          }\n          cursor\n        }\n        pageInfo {\n          endCursor\n          hasNextPage\n        }\n      }\n    }\n    id\n  }\n}\n"
+    "text": "query IssueDetailPageQuery(\n  $owner: String!\n  $name: String!\n  $number: Int!\n) {\n  repository(owner: $owner, name: $name) {\n    issue(number: $number) {\n      id\n      number\n      title\n      body\n      bodyHTML\n      state\n      stateReason\n      createdAt\n      updatedAt\n      closedAt\n      url\n      author {\n        __typename\n        login\n        avatarUrl(size: 64)\n        ... on User {\n          name\n        }\n        ... on Node {\n          __isNode: __typename\n          id\n        }\n      }\n      labels(first: 20) {\n        nodes {\n          id\n          name\n          color\n        }\n      }\n      assignees(first: 10) {\n        nodes {\n          id\n          login\n          avatarUrl\n        }\n      }\n      comments(first: 50) {\n        edges {\n          node {\n            id\n            body\n            bodyHTML\n            createdAt\n            author {\n              __typename\n              login\n              avatarUrl(size: 40)\n              ... on User {\n                name\n              }\n              ... on Node {\n                __isNode: __typename\n                id\n              }\n            }\n            __typename\n          }\n          cursor\n        }\n        pageInfo {\n          endCursor\n          hasNextPage\n        }\n      }\n    }\n    id\n  }\n}\n"
   }
 };
 })();
 
-(node as any).hash = "8366eece8b4c3077d036cf450273f228";
+(node as any).hash = "ba9b7c2524ac66e7e9d7ee2f3aad2d11";
 
 export default node;

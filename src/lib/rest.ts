@@ -45,3 +45,32 @@ export async function fetchPullFiles(
   }
   return out;
 }
+
+/** Full GFM via GitHub REST (for README/blob .md — no bodyHTML on Blob). */
+export async function renderMarkdownGfm(
+  markdown: string,
+  context?: string,
+): Promise<string> {
+  const token = getToken();
+  if (!token) throw new Error('Not signed in');
+
+  const res = await fetch('https://api.github.com/markdown', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/vnd.github+json',
+      'Content-Type': 'application/json',
+      'X-GitHub-Api-Version': '2022-11-28',
+    },
+    body: JSON.stringify({
+      text: markdown,
+      mode: 'gfm',
+      ...(context ? { context } : {}),
+    }),
+  });
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`Markdown render ${res.status}: ${body.slice(0, 300)}`);
+  }
+  return res.text();
+}

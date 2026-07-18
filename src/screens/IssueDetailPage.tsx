@@ -1,8 +1,6 @@
 import { graphql, useLazyLoadQuery, useMutation } from 'react-relay';
 import { ConnectionHandler } from 'relay-runtime';
 import { useState } from 'react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
 import type { IssueDetailPageQuery } from './__generated__/IssueDetailPageQuery.graphql';
 import type { IssueDetailPageCloseMutation } from './__generated__/IssueDetailPageCloseMutation.graphql';
 import type { IssueDetailPageReopenMutation } from './__generated__/IssueDetailPageReopenMutation.graphql';
@@ -12,6 +10,7 @@ import { useToast } from '@/lib/toast';
 import { useLiveQuery } from '@/lib/useLiveQuery';
 import { ExternalLink } from '@/components/ExternalLink';
 import { AuthorByline } from '@/components/AuthorByline';
+import { GithubMarkdown } from '@/components/GithubMarkdown';
 
 const query = graphql`
   query IssueDetailPageQuery($owner: String!, $name: String!, $number: Int!) {
@@ -21,6 +20,7 @@ const query = graphql`
         number
         title
         body
+        bodyHTML
         state
         stateReason
         createdAt
@@ -54,6 +54,7 @@ const query = graphql`
             node {
               id
               body
+              bodyHTML
               createdAt
               author {
                 login
@@ -104,6 +105,7 @@ const commentMutation = graphql`
         node {
           id
           body
+          bodyHTML
           createdAt
           author {
             login
@@ -298,11 +300,7 @@ export function IssueDetailPage({ owner, name, number }: Props) {
               meta={new Date(issue.createdAt).toLocaleString()}
             />
           </div>
-          <div className="prose prose-sm max-w-none">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-              {issue.body || '_No description_'}
-            </ReactMarkdown>
-          </div>
+          <GithubMarkdown html={issue.bodyHTML} text={issue.body} />
         </div>
 
         <div className="space-y-3">
@@ -330,11 +328,7 @@ export function IssueDetailPage({ owner, name, number }: Props) {
                     meta={new Date(c.createdAt).toLocaleString()}
                   />
                 </div>
-                <div className="prose prose-sm max-w-none">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                    {c.body}
-                  </ReactMarkdown>
-                </div>
+                <GithubMarkdown html={c.bodyHTML} text={c.body} />
               </div>
             );
           })}
