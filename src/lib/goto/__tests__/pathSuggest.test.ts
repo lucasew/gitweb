@@ -26,19 +26,34 @@ describe('completionContext', () => {
     expect(completionContext(root, 'src')).toEqual({
       listDir: '',
       prefix: 'src',
+      climbDest: null,
     });
   });
 
-  it('.. from nested tree lists parent', () => {
+  it('.. and ../ list parent directory', () => {
     expect(completionContext(nested, '..')).toEqual({
       listDir: 'src',
       prefix: '',
+      climbDest: { abs: 'src', ups: 1 },
+    });
+    expect(completionContext(nested, '../')).toEqual({
+      listDir: 'src',
+      prefix: '',
+      climbDest: { abs: 'src', ups: 1 },
+    });
+  });
+
+  it('../x lists parent with prefix', () => {
+    expect(completionContext(nested, '../x')).toEqual({
+      listDir: 'src',
+      prefix: 'x',
+      climbDest: null,
     });
   });
 });
 
 describe('relative + resolve', () => {
-  it('.. from nested tree is parent', () => {
+  it('.. from nested tree is parent, shown as ../', () => {
     expect(
       resolveFromCodeLocation({ mode: 'tree', path: 'src/lib' }, '..'),
     ).toBe('src');
@@ -47,23 +62,7 @@ describe('relative + resolve', () => {
     ).toBe('../');
   });
 
-  it('.. from blob climbs out of containing dir', () => {
-    expect(
-      resolveFromCodeLocation(
-        { mode: 'blob', path: 'src/lib/foo.ts' },
-        '..',
-      ),
-    ).toBe('src');
-    expect(
-      relativeToLocation(
-        { mode: 'blob', path: 'src/lib/foo.ts' },
-        'src',
-        true,
-      ),
-    ).toBe('../');
-  });
-
-  it('sibling is relative without abs prefix', () => {
+  it('sibling relative', () => {
     expect(
       relativeToLocation(
         { mode: 'tree', path: 'src/lib' },

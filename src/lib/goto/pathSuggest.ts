@@ -1,5 +1,6 @@
 import {
   isPathExpression,
+  locationDir,
   relativeToLocation,
   resolveFromCodeLocation,
   stripSlashes,
@@ -8,10 +9,11 @@ import { listRepoDir } from '@/lib/rest';
 import { parseSlashCommand } from './slash';
 import type { GotoCandidate, GotoContext, PathNavAnchor } from './types';
 
-const MAX_SUGGESTIONS = 40;
+const MAX_SUGGESTIONS = 50;
 
 /**
- * Async path autocomplete with **relative** labels (from current location).
+ * Async path autocomplete with relative labels (from current location).
+ * After `../` or Tab→`../`, lists the parent directory's entries.
  */
 export async function suggestPaths(
   ctx: GotoContext,
@@ -25,39 +27,41 @@ export async function suggestPaths(
   if (!isPathExpression(q, { inCode: true })) return [];
 
   const loc = { mode: anchor.mode, path: anchor.path };
-  const { listDir, prefix } = completionContext(anchor, q);
+  const { listDir, prefix, climbDest } = completionContext(anchor, q);
+
   const out: GotoCandidate[] = [];
   const seen = new Set<string>();
-
   const add = (c: GotoCandidate) => {
     if (seen.has(c.id)) return;
     seen.add(c.id);
     out.push(c);
   };
 
-  const exact = resolveFromCodeLocation(loc, q);
-  const climb = isPureClimb(q);
-
-  // Pure `..`: destination first (relative `..`), never "current path" as #1
-  if (climb && exact != null) {
-    const rel = relativeToLocation(loc, exact, true);
-    add({
-      id: `path:${exact || '/'}`,
-      label: rel,
-      hint: 'up',
-      value: `path climb ${q} ${rel}`,
-      group: 'Path',
-      icon: 'path',
-      priority: 0,
-      action: {
-        kind: 'open-repo-path',
-        owner: anchor.owner,
-        name: anchor.name,
-        ref: anchor.refName,
-        path: exact,
-        knownKind: 'tree',
-      },
-    });
+  // Climb target first (e.g. ../) — skip when already at root (no-op)
+  if (climbDest != null) {
+    const cwd = locationDir(loc);
+    const isNoOp = climbDest.abs === cwd;
+    if (!isNoOp) {
+      const climbLabel =
+        Array.from({ length: climbDest.ups }, () => '..').join('/') + '/';
+      add({
+        id: `path:${climbDest.abs || '/'}`,
+        label: climbLabel,
+        hint: 'up',
+        value: `path climb ${q} ${climbLabel}`,
+        group: 'Path',
+        icon: 'path',
+        priority: 0,
+        action: {
+          kind: 'open-repo-path',
+          owner: anchor.owner,
+          name: anchor.name,
+          ref: anchor.refName,
+          path: climbDest.abs,
+          knownKind: 'tree',
+        },
+      });
+    }
   }
 
   let entries;
@@ -72,31 +76,22 @@ export async function suggestPaths(
     return out;
   }
 
-  if (!entries) {
-    if (exact != null && !climb) {
-      add(relCandidate(anchor, exact, false, q, 5));
-    }
-    return out;
-  }
+  if (!entries) return out;
 
   const pref = prefix.toLowerCase();
-  const currentAbs = stripSlashes(loc.path);
-  const cwdAbs =
-    loc.mode === 'blob'
-      ? stripSlashes(anchor.cwd)
-      : stripSlashes(anchor.path);
+  const hereFile =
+    anchor.mode === 'blob' ? stripSlashes(anchor.path) : null;
 
-  const matches = entries.filter((e) => {
-    if (pref && !e.name.toLowerCase().startsWith(pref)) return false;
-    // Don't suggest the directory we're already in as a "go up" peer when climbing
-    if (climb && e.type === 'dir' && e.path === cwdAbs) return false;
-    if (climb && e.path === currentAbs) return false;
-    return true;
-  });
+  for (const e of entries) {
+    if (pref && !e.name.toLowerCase().startsWith(pref)) continue;
+    // Don't suggest the file you're already viewing
+    if (hereFile && e.path === hereFile) continue;
 
-  for (const e of matches.slice(0, MAX_SUGGESTIONS)) {
     const isDir = e.type === 'dir';
     const rel = relativeToLocation(loc, e.path, isDir);
+    // Skip noisy "./" when listing current dir
+    if (rel === './' || rel === '.') continue;
+
     add({
       id: `path:${e.path}`,
       label: rel,
@@ -114,86 +109,77 @@ export async function suggestPaths(
         knownKind: isDir ? 'tree' : 'blob',
       },
     });
+
+    if (out.length >= MAX_SUGGESTIONS + 1) break;
   }
 
-  // Non-climb exact (e.g. typed full relative that resolves)
-  if (exact != null && !climb && !seen.has(`path:${exact || '/'}`)) {
-    const isDir = entries.some((e) => e.path === exact && e.type === 'dir');
-    // only if looks complete
-    if (!prefix || matches.some((m) => m.path === exact) || q.endsWith('/')) {
-      add(relCandidate(anchor, exact, isDir, q, 2));
-    }
-  }
-
-  // Sort: lower priority first
-  out.sort((a, b) => a.priority - b.priority);
+  out.sort((a, b) => a.priority - b.priority || a.label.localeCompare(b.label));
   return out;
 }
 
-function relCandidate(
-  anchor: PathNavAnchor,
-  absPath: string,
-  isDir: boolean,
-  q: string,
-  priority: number,
-): GotoCandidate {
-  const loc = { mode: anchor.mode, path: anchor.path };
-  const rel = relativeToLocation(loc, absPath, isDir);
-  return {
-    id: `path:${absPath || '/'}`,
-    label: rel,
-    hint: q,
-    value: `path exact ${q} ${rel}`,
-    group: 'Path',
-    icon: 'path',
-    priority,
-    action: {
-      kind: 'open-repo-path',
-      owner: anchor.owner,
-      name: anchor.name,
-      ref: anchor.refName,
-      path: absPath,
-      knownKind: isDir ? 'tree' : undefined,
-    },
-  };
-}
+export type CompletionContext = {
+  /** Absolute repo dir to list via API */
+  listDir: string;
+  /** Filter on entry name */
+  prefix: string;
+  /** Pure climb destination, if query is only .. */
+  climbDest: { abs: string; ups: number } | null;
+};
 
+/**
+ * Where to list + name prefix. Pure `..` / `../` lists the **parent** dir.
+ */
 export function completionContext(
   anchor: PathNavAnchor,
   query: string,
-): { listDir: string; prefix: string } {
+): CompletionContext {
   const q = query.trim();
   const loc = { mode: anchor.mode, path: anchor.path };
 
-  if (isPureClimb(q)) {
-    // List the parent (destination of ..), not current
-    const parent = resolveFromCodeLocation(loc, q) ?? '';
-    return { listDir: parent, prefix: '' };
+  const ups = countUps(q);
+  if (ups != null && ups > 0) {
+    const abs = resolveFromCodeLocation(loc, q.replace(/\/+$/, '') || '..') ?? '';
+    // List the directory we land on (parent), so children appear after ../
+    return {
+      listDir: abs,
+      prefix: '',
+      climbDest: { abs, ups },
+    };
   }
 
-  if (q.endsWith('/') || q === '.' || q === './') {
+  if (q === '.' || q === './') {
+    const dir = resolveFromCodeLocation(loc, '.') ?? '';
+    return { listDir: dir, prefix: '', climbDest: null };
+  }
+
+  // Browse into a directory: `src/` or `../lib/`
+  if (q.endsWith('/')) {
     const dir = resolveFromCodeLocation(loc, q) ?? '';
-    return { listDir: dir, prefix: '' };
+    return { listDir: dir, prefix: '', climbDest: null };
   }
 
+  // Single segment in current dir
   if (!q.includes('/')) {
     const listDir = resolveFromCodeLocation(loc, '.') ?? '';
-    return { listDir, prefix: q };
+    return { listDir, prefix: q, climbDest: null };
   }
 
+  // `src/li` or `../li` — list parent, filter last segment
   const slash = q.lastIndexOf('/');
   const parentExpr = q.slice(0, slash);
   const prefix = q.slice(slash + 1);
-  const listDir =
-    resolveFromCodeLocation(
-      loc,
-      parentExpr === '' ? '/' : parentExpr,
-    ) ?? '';
-  return { listDir, prefix };
+  // parentExpr may be `..` or `src` or ``
+  const parentQuery =
+    parentExpr === '' ? '.' : parentExpr.endsWith('/') ? parentExpr : parentExpr;
+  const listDir = resolveFromCodeLocation(loc, parentQuery) ?? '';
+  return { listDir, prefix, climbDest: null };
 }
 
-function isPureClimb(q: string): boolean {
+/** Number of leading `..` segments if query is only climbs (optional trailing /). */
+function countUps(q: string): number | null {
   const t = q.trim().replace(/\/+$/, '');
-  if (!t) return false;
-  return t.split('/').every((p) => p === '..');
+  if (!t) return null;
+  const parts = t.split('/');
+  if (parts.length === 0 || !parts.every((p) => p === '..')) return null;
+  return parts.length;
 }
