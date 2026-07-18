@@ -304,13 +304,33 @@ const pullDetailRoute = createRoute({
           owner={owner}
           name={name}
           number={Number(number)}
+          tab="conversation"
         />
       </Suspend>
     );
   },
 });
 
-// github uses /pulls for list sometimes; we use /pulls list + /pull/:n
+const pullFilesRoute = createRoute({
+  getParentRoute: () => repoLayoutRoute,
+  path: '/pull/$number/files',
+  component: function PullFilesRoute() {
+    const { owner, name } = repoLayoutRoute.useParams();
+    const { number } = pullFilesRoute.useParams();
+    return (
+      <Suspend>
+        <PullDetailPage
+          owner={owner}
+          name={name}
+          number={Number(number)}
+          tab="files"
+        />
+      </Suspend>
+    );
+  },
+});
+
+// github: /pulls list + /pull/:n conversation + /pull/:n/files
 const routeTree = rootRoute.addChildren([
   indexRoute,
   searchRoute,
@@ -322,6 +342,7 @@ const routeTree = rootRoute.addChildren([
     issueDetailRoute,
     pullsRoute,
     pullDetailRoute,
+    pullFilesRoute,
   ]),
 ]);
 

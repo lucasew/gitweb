@@ -6,6 +6,7 @@ import {
   useRelayEnvironment,
 } from 'react-relay';
 import { lazy, Suspense, useState } from 'react';
+import { Link } from '@tanstack/react-router';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { PullDetailPageQuery } from './__generated__/PullDetailPageQuery.graphql';
@@ -156,8 +157,15 @@ const reviewMutation = graphql`
   }
 `;
 
-type Props = { owner: string; name: string; number: number };
-type Tab = 'conversation' | 'files';
+export type PullTab = 'conversation' | 'files';
+
+type Props = {
+  owner: string;
+  name: string;
+  number: number;
+  /** Deep-linked tab: `/pull/:n` or `/pull/:n/files` */
+  tab?: PullTab;
+};
 type MergeMethod = 'MERGE' | 'SQUASH' | 'REBASE';
 
 const MERGE_LABELS: Record<MergeMethod, string> = {
@@ -172,7 +180,12 @@ const MERGE_SHORT: Record<MergeMethod, string> = {
   REBASE: 'Rebase',
 };
 
-export function PullDetailPage({ owner, name, number }: Props) {
+export function PullDetailPage({
+  owner,
+  name,
+  number,
+  tab = 'conversation',
+}: Props) {
   const toast = useToast();
   const env = useRelayEnvironment();
   const variables = { owner, name, number };
@@ -189,7 +202,6 @@ export function PullDetailPage({ owner, name, number }: Props) {
 
   const repo = data.repository;
   const pr = repo?.pullRequest;
-  const [tab, setTab] = useState<Tab>('conversation');
   const [reviewBody, setReviewBody] = useState('');
   const [merging, setMerging] = useState(false);
   const [mergeMethod, setMergeMethod] = useState<MergeMethod | null>(null);
@@ -275,22 +287,24 @@ export function PullDetailPage({ owner, name, number }: Props) {
         </div>
 
         <div role="tablist" className="tabs tabs-bordered">
-          <button
-            type="button"
+          <Link
             role="tab"
+            to="/$owner/$name/pull/$number"
+            params={{ owner, name, number: String(number) }}
             className={`tab ${tab === 'conversation' ? 'tab-active' : ''}`}
-            onClick={() => setTab('conversation')}
+            aria-selected={tab === 'conversation'}
           >
             Conversation
-          </button>
-          <button
-            type="button"
+          </Link>
+          <Link
             role="tab"
+            to="/$owner/$name/pull/$number/files"
+            params={{ owner, name, number: String(number) }}
             className={`tab ${tab === 'files' ? 'tab-active' : ''}`}
-            onClick={() => setTab('files')}
+            aria-selected={tab === 'files'}
           >
             Files
-          </button>
+          </Link>
         </div>
 
         {tab === 'files' ? (

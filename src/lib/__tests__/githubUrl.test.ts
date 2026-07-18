@@ -6,6 +6,9 @@ describe('githubUrlToAppPath', () => {
     expect(
       githubUrlToAppPath('https://github.com/lucasew/gitweb/issues/1'),
     ).toBe('/lucasew/gitweb/issues/1');
+    expect(
+      githubUrlToAppPath('https://github.com/o/r/pull/1/files'),
+    ).toBe('/o/r/pull/1/files');
   });
 
   it('maps bare owner/repo', () => {

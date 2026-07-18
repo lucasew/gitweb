@@ -104,7 +104,8 @@ Use **github.com-compatible path shapes** for core entities:
 
 - `/{owner}/{repo}`
 - `/{owner}/{repo}/issues`, `/{owner}/{repo}/issues/:number`
-- `/{owner}/{repo}/pull/:number` (singular `pull`, GitHub-style)
+- `/{owner}/{repo}/pull/:number` (singular `pull`, GitHub-style) — conversation  
+- `/{owner}/{repo}/pull/:number/files` — Files / diffs tab (deep-linked)
 - `/{owner}/{repo}/tree/:ref/*`, `/{owner}/{repo}/blob/:ref/*`
 - User/org routes where we mirror them
 
