@@ -10,6 +10,8 @@ type Props = {
   path: string;
   /** Last segment is a file (blob) — not a tree link */
   isBlob?: boolean;
+  /** Dense chrome style for TopBar */
+  dense?: boolean;
   className?: string;
 };
 
@@ -23,22 +25,34 @@ export function PathBreadcrumb({
   refName,
   path,
   isBlob = false,
+  dense = false,
   className,
 }: Props) {
   const parts = path.split('/').filter(Boolean);
+  const chevron = dense ? 'size-3.5' : 'size-3.5';
+  const text = dense ? 'text-xs' : 'text-sm';
+  const linkCls = dense
+    ? 'btn btn-ghost btn-xs px-1 h-7 min-h-0 font-mono font-normal max-w-[10rem] truncate'
+    : 'link link-hover font-mono';
 
   return (
     <nav
       aria-label="Path"
       className={cn(
-        'flex flex-wrap items-center gap-x-0.5 gap-y-1 text-sm font-mono min-w-0',
+        'flex flex-wrap items-center gap-x-0.5 gap-y-0.5 min-w-0',
+        text,
+        !dense && 'font-mono',
         className,
       )}
     >
       <Link
         to="/$owner/$name/tree/$ref/$"
         params={{ owner, name, ref: refName, _splat: '' }}
-        className="link link-hover opacity-80 shrink-0"
+        className={cn(
+          linkCls,
+          !dense && 'opacity-80 shrink-0',
+          dense && 'opacity-80 shrink-0',
+        )}
         title={`Tree at ${refName}`}
       >
         {refName}
@@ -50,13 +64,22 @@ export function PathBreadcrumb({
         const crumbIsBlob = isBlob && isLast;
 
         return (
-          <span key={subPath} className="inline-flex items-center gap-0.5 min-w-0">
+          <span
+            key={subPath}
+            className="inline-flex items-center gap-0.5 min-w-0"
+          >
             <ChevronRight
-              className="size-3.5 opacity-40 shrink-0"
+              className={cn(chevron, 'opacity-40 shrink-0')}
               aria-hidden
             />
             {crumbIsBlob ? (
-              <span className="font-medium truncate min-w-0" title={seg}>
+              <span
+                className={cn(
+                  'font-medium truncate min-w-0 font-mono',
+                  dense && 'px-1 max-w-[12rem]',
+                )}
+                title={seg}
+              >
                 {seg}
               </span>
             ) : (
@@ -64,7 +87,8 @@ export function PathBreadcrumb({
                 to="/$owner/$name/tree/$ref/$"
                 params={{ owner, name, ref: refName, _splat: subPath }}
                 className={cn(
-                  'link link-hover truncate min-w-0',
+                  linkCls,
+                  'truncate min-w-0',
                   isLast ? 'font-medium opacity-100' : 'opacity-80',
                 )}
                 title={subPath}

@@ -70,3 +70,25 @@ export function parseRepoFromPath(pathname: string): {
   if (parts[0] === 'search') return null;
   return { owner: parts[0]!, name: parts[1]! };
 }
+
+/** `/owner/repo/blob|tree/ref/optional/path` */
+export function parseCodeLocation(pathname: string): {
+  owner: string;
+  name: string;
+  mode: 'blob' | 'tree';
+  refName: string;
+  path: string;
+} | null {
+  const parts = pathname.split('/').filter(Boolean);
+  if (parts.length < 4) return null;
+  const mode = parts[2];
+  if (mode !== 'blob' && mode !== 'tree') return null;
+  const owner = parts[0]!;
+  const name = parts[1]!;
+  const refName = decodeURIComponent(parts[3]!);
+  const path = parts
+    .slice(4)
+    .map((p) => decodeURIComponent(p))
+    .join('/');
+  return { owner, name, mode, refName, path };
+}

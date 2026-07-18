@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { fuzzyMatch, parseRepoFromPath } from '../recentRepos';
+import {
+  fuzzyMatch,
+  parseCodeLocation,
+  parseRepoFromPath,
+} from '../recentRepos';
 
 describe('fuzzyMatch', () => {
   it('matches subsequence', () => {
@@ -15,5 +19,33 @@ describe('parseRepoFromPath', () => {
       owner: 'NixOS',
       name: 'nixpkgs',
     });
+  });
+});
+
+describe('parseCodeLocation', () => {
+  it('parses blob path', () => {
+    expect(
+      parseCodeLocation('/lucasew/margea/blob/main/src/index.css'),
+    ).toEqual({
+      owner: 'lucasew',
+      name: 'margea',
+      mode: 'blob',
+      refName: 'main',
+      path: 'src/index.css',
+    });
+  });
+
+  it('parses tree root', () => {
+    expect(parseCodeLocation('/o/r/tree/main')).toEqual({
+      owner: 'o',
+      name: 'r',
+      mode: 'tree',
+      refName: 'main',
+      path: '',
+    });
+  });
+
+  it('ignores non-code routes', () => {
+    expect(parseCodeLocation('/o/r/pull/1/files')).toBeNull();
   });
 });
