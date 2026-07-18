@@ -8,6 +8,13 @@ import {
 import { STORE_AND_NETWORK } from '@/lib/relayPolicy';
 import { lazy, Suspense, useState } from 'react';
 import { Link } from '@tanstack/react-router';
+import {
+  CircleCheck,
+  ExternalLink as ExternalLinkIcon,
+  GitPullRequestDraft,
+  MessageSquareText,
+  XCircle,
+} from 'lucide-react';
 import type {
   PullDetailPageQuery,
   PullDetailPageQuery$data,
@@ -28,6 +35,7 @@ import { GithubMarkdown } from '@/components/GithubMarkdown';
 import { PrStateBadge } from '@/components/PrStateBadge';
 import { ReviewStateBadge } from '@/components/ReviewStateBadge';
 import { PrChecksStrip } from '@/components/PrChecksStrip';
+import { cn } from '@/lib/cls';
 
 const PullFilesDiff = lazy(() =>
   import('@/components/PullFilesDiff').then((m) => ({
@@ -266,16 +274,18 @@ type Props = {
 };
 type MergeMethod = 'MERGE' | 'SQUASH' | 'REBASE';
 
-const MERGE_LABELS: Record<MergeMethod, string> = {
-  MERGE: 'Create a merge commit',
-  SQUASH: 'Squash and merge',
-  REBASE: 'Rebase and merge',
-};
-
+/** Shown in the merge pill select (compact). */
 const MERGE_SHORT: Record<MergeMethod, string> = {
   MERGE: 'Merge',
   SQUASH: 'Squash',
   REBASE: 'Rebase',
+};
+
+/** Longer copy for option titles / a11y (hover). */
+const MERGE_HINT: Record<MergeMethod, string> = {
+  MERGE: 'Create a merge commit',
+  SQUASH: 'Squash and merge',
+  REBASE: 'Rebase and merge',
 };
 
 export function PullDetailPage({
@@ -552,14 +562,22 @@ export function PullDetailPage({
             {canReview ? (
               <button
                 type="button"
-                className={
-                  pr.isDraft ? 'btn btn-sm btn-primary' : 'btn btn-sm btn-outline'
-                }
+                className={cn(
+                  'btn btn-sm gap-1.5',
+                  pr.isDraft ? 'btn-primary' : 'btn-outline',
+                )}
                 disabled={draftBusy}
                 title={
                   pr.isDraft
                     ? 'Mark this pull request as ready for review'
                     : 'Convert this pull request to a draft'
+                }
+                aria-label={
+                  draftBusy
+                    ? 'Updating draft state'
+                    : pr.isDraft
+                      ? 'Ready for review'
+                      : 'Convert to draft'
                 }
                 onClick={() => {
                   if (pr.isDraft) {
@@ -603,11 +621,18 @@ export function PullDetailPage({
                   }
                 }}
               >
-                {draftBusy
-                  ? 'Updating…'
-                  : pr.isDraft
-                    ? 'Ready for review'
-                    : 'Convert to draft'}
+                {pr.isDraft ? (
+                  <CircleCheck className="size-4 shrink-0" aria-hidden />
+                ) : (
+                  <GitPullRequestDraft className="size-4 shrink-0" aria-hidden />
+                )}
+                <span className="hidden sm:inline">
+                  {draftBusy
+                    ? 'Updating…'
+                    : pr.isDraft
+                      ? 'Ready for review'
+                      : 'Convert to draft'}
+                </span>
               </button>
             ) : null}
 
@@ -616,10 +641,13 @@ export function PullDetailPage({
                 <div
                   tabIndex={0}
                   role="button"
-                  className="btn btn-sm btn-outline"
+                  className="btn btn-sm btn-outline gap-1.5"
+                  title="Review"
+                  aria-label="Review"
                 >
-                  Review
-                  <span className="opacity-50 text-xs">▾</span>
+                  <MessageSquareText className="size-4 shrink-0" aria-hidden />
+                  <span className="hidden sm:inline">Review</span>
+                  <span className="opacity-50 text-xs hidden sm:inline">▾</span>
                 </div>
                 <ul
                   tabIndex={0}
@@ -680,17 +708,18 @@ export function PullDetailPage({
               <div className="join rounded-full border border-base-300 overflow-hidden bg-base-100">
                 {allowedMethods.length > 0 ? (
                   <select
-                    className="select select-sm join-item border-0 bg-base-100 text-base-content focus:outline-none w-auto max-w-[min(100%,11rem)] rounded-none opacity-100"
+                    className="select select-sm join-item border-0 bg-base-100 text-base-content focus:outline-none w-auto max-w-[min(100%,8rem)] rounded-none opacity-100"
                     value={activeMergeMethod}
                     disabled={mergeInFlight || merging}
                     onChange={(e) =>
                       setMergeMethod(e.target.value as MergeMethod)
                     }
                     aria-label="Merge strategy"
+                    title={MERGE_HINT[activeMergeMethod]}
                   >
                     {allowedMethods.map((m) => (
-                      <option key={m} value={m}>
-                        {MERGE_LABELS[m]}
+                      <option key={m} value={m} title={MERGE_HINT[m]}>
+                        {MERGE_SHORT[m]}
                       </option>
                     ))}
                   </select>
@@ -748,8 +777,10 @@ export function PullDetailPage({
             {canReview ? (
               <button
                 type="button"
-                className="btn btn-sm"
+                className="btn btn-sm gap-1.5"
                 disabled={closeInFlight}
+                title="Close pull request"
+                aria-label="Close pull request"
                 onClick={() => {
                   commitClose({
                     variables: { id: pr.id },
@@ -766,12 +797,19 @@ export function PullDetailPage({
                   });
                 }}
               >
-                Close
+                <XCircle className="size-4 shrink-0" aria-hidden />
+                <span className="hidden sm:inline">Close</span>
               </button>
             ) : null}
 
-            <ExternalLink className="btn btn-sm btn-ghost" href={pr.url}>
-              GitHub
+            <ExternalLink
+              className="btn btn-sm btn-ghost gap-1.5"
+              href={pr.url}
+              title="Open on GitHub"
+              aria-label="Open on GitHub"
+            >
+              <ExternalLinkIcon className="size-4 shrink-0" aria-hidden />
+              <span className="hidden sm:inline">GitHub</span>
             </ExternalLink>
           </div>
         </div>
