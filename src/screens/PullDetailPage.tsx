@@ -264,7 +264,7 @@ export function PullDetailPage({
 
   return (
     <div className="flex flex-col min-h-[calc(100vh-3rem)] w-full">
-      <div className="w-full min-w-0 flex-1 space-y-3 p-[clamp(0.75rem,2vw,1.25rem)] pb-[max(4rem,6vh)]">
+      <div className="w-full min-w-0 flex-1 space-y-3 p-[clamp(0.75rem,2vw,1.25rem)]">
         {/* Header + tabs: always full content width (same on conversation and files) */}
         <div className="flex items-start gap-2 w-full">
           <h1 className="text-xl font-semibold min-w-0 flex-1">
@@ -283,25 +283,130 @@ export function PullDetailPage({
           {pr.headRefName} → {pr.baseRefName}
         </div>
 
-        <div role="tablist" className="tabs tabs-bordered w-full">
-          <Link
-            role="tab"
-            to="/$owner/$name/pull/$number"
-            params={{ owner, name, number: String(number) }}
-            className={`tab ${tab === 'conversation' ? 'tab-active' : ''}`}
-            aria-selected={tab === 'conversation'}
-          >
-            Conversation
-          </Link>
-          <Link
-            role="tab"
-            to="/$owner/$name/pull/$number/files"
-            params={{ owner, name, number: String(number) }}
-            className={`tab ${tab === 'files' ? 'tab-active' : ''}`}
-            aria-selected={tab === 'files'}
-          >
-            Files
-          </Link>
+        <div className="flex flex-wrap items-end gap-2 w-full min-w-0 border-b border-base-300">
+          <div role="tablist" className="tabs tabs-bordered min-w-0 flex-1">
+            <Link
+              role="tab"
+              to="/$owner/$name/pull/$number"
+              params={{ owner, name, number: String(number) }}
+              className={`tab ${tab === 'conversation' ? 'tab-active' : ''}`}
+              aria-selected={tab === 'conversation'}
+            >
+              Conversation
+            </Link>
+            <Link
+              role="tab"
+              to="/$owner/$name/pull/$number/files"
+              params={{ owner, name, number: String(number) }}
+              className={`tab ${tab === 'files' ? 'tab-active' : ''}`}
+              aria-selected={tab === 'files'}
+            >
+              Files
+            </Link>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-1.5 shrink-0 ms-auto pb-1">
+            {!pr.merged && pr.state === 'OPEN' ? (
+              <>
+                {allowedMethods.length > 0 ? (
+                  <label className="flex items-center gap-1 text-xs min-w-0">
+                    <span className="opacity-60 hidden sm:inline shrink-0">
+                      Strategy
+                    </span>
+                    <select
+                      className="select select-bordered select-sm w-auto max-w-[min(100%,12rem)]"
+                      value={activeMergeMethod}
+                      disabled={mergeInFlight || merging}
+                      onChange={(e) =>
+                        setMergeMethod(e.target.value as MergeMethod)
+                      }
+                      aria-label="Merge strategy"
+                    >
+                      {allowedMethods.map((m) => (
+                        <option key={m} value={m}>
+                          {MERGE_LABELS[m]}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                ) : (
+                  <span className="text-xs opacity-60">No merge methods</span>
+                )}
+                <button
+                  type="button"
+                  className="btn btn-sm btn-primary"
+                  disabled={
+                    mergeInFlight ||
+                    merging ||
+                    pr.mergeable === 'CONFLICTING' ||
+                    allowedMethods.length === 0
+                  }
+                  onClick={() => {
+                    setMerging(true);
+                    commitMerge({
+                      variables: {
+                        id: pr.id,
+                        mergeMethod: activeMergeMethod,
+                      },
+                      optimisticResponse: {
+                        mergePullRequest: {
+                          pullRequest: {
+                            id: pr.id,
+                            state: 'OPEN',
+                            merged: false,
+                            mergeable: pr.mergeable,
+                          },
+                        },
+                      },
+                      onCompleted: (res) => {
+                        setMerging(false);
+                        if (res.mergePullRequest?.pullRequest?.merged) {
+                          toast.info(
+                            `Merged (${MERGE_SHORT[activeMergeMethod]})`,
+                          );
+                        } else {
+                          toast.info('Merge completed');
+                        }
+                      },
+                      onError: (e) => {
+                        setMerging(false);
+                        toast.error('Merge failed', e.message);
+                      },
+                    });
+                  }}
+                >
+                  {mergeInFlight || merging
+                    ? 'Merging…'
+                    : MERGE_SHORT[activeMergeMethod]}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-sm"
+                  disabled={closeInFlight}
+                  onClick={() => {
+                    commitClose({
+                      variables: { id: pr.id },
+                      optimisticResponse: {
+                        closePullRequest: {
+                          pullRequest: {
+                            id: pr.id,
+                            state: 'CLOSED',
+                            merged: false,
+                          },
+                        },
+                      },
+                      onError: (e) => toast.error('Close failed', e.message),
+                    });
+                  }}
+                >
+                  Close
+                </button>
+              </>
+            ) : null}
+            <ExternalLink className="btn btn-sm btn-ghost" href={pr.url}>
+              GitHub
+            </ExternalLink>
+          </div>
         </div>
 
         {tab === 'files' ? (
@@ -448,105 +553,6 @@ export function PullDetailPage({
             ) : null}
           </div>
         )}
-      </div>
-
-      <div className="sticky bottom-0 border-t border-base-300 bg-base-100 p-2 flex flex-wrap gap-2 items-center w-full">
-        {!pr.merged && pr.state === 'OPEN' ? (
-          <>
-            {allowedMethods.length > 0 ? (
-              <label className="flex items-center gap-1 text-xs">
-                <span className="opacity-60 hidden sm:inline">Strategy</span>
-                <select
-                  className="select select-bordered select-sm max-w-[14rem]"
-                  value={activeMergeMethod}
-                  disabled={mergeInFlight || merging}
-                  onChange={(e) =>
-                    setMergeMethod(e.target.value as MergeMethod)
-                  }
-                  aria-label="Merge strategy"
-                >
-                  {allowedMethods.map((m) => (
-                    <option key={m} value={m}>
-                      {MERGE_LABELS[m]}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            ) : (
-              <span className="text-xs opacity-60">No merge methods enabled</span>
-            )}
-            <button
-              type="button"
-              className="btn btn-sm btn-primary"
-              disabled={
-                mergeInFlight ||
-                merging ||
-                pr.mergeable === 'CONFLICTING' ||
-                allowedMethods.length === 0
-              }
-              onClick={() => {
-                setMerging(true);
-                commitMerge({
-                  variables: {
-                    id: pr.id,
-                    mergeMethod: activeMergeMethod,
-                  },
-                  optimisticResponse: {
-                    mergePullRequest: {
-                      pullRequest: {
-                        id: pr.id,
-                        state: 'OPEN',
-                        merged: false,
-                        mergeable: pr.mergeable,
-                      },
-                    },
-                  },
-                  onCompleted: (res) => {
-                    setMerging(false);
-                    if (res.mergePullRequest?.pullRequest?.merged) {
-                      toast.info(`Merged (${MERGE_SHORT[activeMergeMethod]})`);
-                    } else {
-                      toast.info('Merge completed');
-                    }
-                  },
-                  onError: (e) => {
-                    setMerging(false);
-                    toast.error('Merge failed', e.message);
-                  },
-                });
-              }}
-            >
-              {mergeInFlight || merging
-                ? 'Merging…'
-                : MERGE_SHORT[activeMergeMethod]}
-            </button>
-            <button
-              type="button"
-              className="btn btn-sm"
-              disabled={closeInFlight}
-              onClick={() => {
-                commitClose({
-                  variables: { id: pr.id },
-                  optimisticResponse: {
-                    closePullRequest: {
-                      pullRequest: {
-                        id: pr.id,
-                        state: 'CLOSED',
-                        merged: false,
-                      },
-                    },
-                  },
-                  onError: (e) => toast.error('Close failed', e.message),
-                });
-              }}
-            >
-              Close
-            </button>
-          </>
-        ) : null}
-        <ExternalLink className="btn btn-sm btn-ghost ml-auto" href={pr.url}>
-          GitHub
-        </ExternalLink>
       </div>
     </div>
   );
