@@ -65,17 +65,26 @@ export function TopBar({
                 className="size-4 opacity-40 shrink-0"
                 aria-hidden
               />
+              <a
+                href={`https://github.com/${repo.owner}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-ghost btn-sm px-1.5 min-w-0 font-normal opacity-70 max-w-[8rem] truncate"
+                title={repo.owner}
+              >
+                {repo.owner}
+              </a>
+              <ChevronRight
+                className="size-4 opacity-40 shrink-0"
+                aria-hidden
+              />
               <Link
                 to="/$owner/$name"
                 params={{ owner: repo.owner, name: repo.name }}
-                className="btn btn-ghost btn-sm px-1.5 min-w-0 font-medium"
-                title={`${repo.owner}/${repo.name}`}
+                className="btn btn-ghost btn-sm px-1.5 min-w-0 font-medium max-w-[10rem] truncate"
+                title={repo.name}
               >
-                <span className="truncate">
-                  <span className="opacity-60 font-normal">{repo.owner}</span>
-                  <span className="opacity-40">/</span>
-                  {repo.name}
-                </span>
+                {repo.name}
               </Link>
 
               <div

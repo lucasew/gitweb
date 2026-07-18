@@ -5,6 +5,7 @@ import type { CodeBrowserPageQuery } from './__generated__/CodeBrowserPageQuery.
 import { ExternalLink } from '@/components/ExternalLink';
 import { GithubMarkdown } from '@/components/GithubMarkdown';
 import { CodeBlobView } from '@/components/CodeBlobView';
+import { PathBreadcrumb } from '@/components/PathBreadcrumb';
 import { renderMarkdownGfm } from '@/lib/rest';
 import { LoadingBlock } from '@/components/LoadingBlock';
 import { githubBlobUrl } from '@/lib/permalinks';
@@ -112,9 +113,18 @@ export function CodeBrowserPage({ owner, name, refName, path, mode }: Props) {
 
   if (obj.__typename === 'Tree' && 'entries' in obj) {
     return (
-      <div className="p-[clamp(0.75rem,2vw,1.25rem)] w-full min-w-0">
-        <div className="text-sm opacity-60 mb-2 font-mono break-all">
-          {refName}:{path || '/'}
+      <div className="p-[clamp(0.75rem,2vw,1.25rem)] w-full min-w-0 space-y-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <PathBreadcrumb
+            className="flex-1 min-w-0"
+            owner={owner}
+            name={name}
+            refName={refName}
+            path={path}
+          />
+          <ExternalLink className="btn btn-xs btn-ghost shrink-0" href={ghBlob}>
+            GitHub
+          </ExternalLink>
         </div>
         <ul className="card bg-base-100 border border-base-300 divide-y divide-base-300 dense-list w-full">
           {path ? (
@@ -190,9 +200,14 @@ export function CodeBrowserPage({ owner, name, refName, path, mode }: Props) {
     return (
       <div className="flex flex-col w-full min-w-0 h-full min-h-0 overflow-hidden">
         <div className="flex flex-wrap items-center gap-2 px-[clamp(0.75rem,2vw,1.25rem)] py-2 border-b border-base-300 bg-base-100 shrink-0 z-10">
-          <div className="text-sm font-mono break-all min-w-0 flex-1 opacity-80">
-            {refName}:{path}
-          </div>
+          <PathBreadcrumb
+            className="flex-1 min-w-0"
+            owner={owner}
+            name={name}
+            refName={refName}
+            path={path}
+            isBlob
+          />
           <ExternalLink className="btn btn-xs btn-ghost shrink-0" href={ghBlob}>
             GitHub
           </ExternalLink>
