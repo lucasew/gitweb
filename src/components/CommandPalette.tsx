@@ -77,7 +77,8 @@ export function CommandPalette({ open, onOpenChange }: Props) {
     setBusy(true);
     try {
       const result = await executeGoto(item.action, {
-        navigate: (to) => navigate({ to }),
+        // Use href so absolute app paths always match (to: is route-id oriented)
+        navigate: (to) => navigate({ href: to }),
         toastError: (title, detail) => toast.error(title, detail),
       });
       if (result === 'navigated') onOpenChange(false);
@@ -99,8 +100,8 @@ export function CommandPalette({ open, onOpenChange }: Props) {
             onValueChange={setQ}
             placeholder={
               ctx.code
-                ? 'Go to: ../foo  ·  src/lib  ·  /code  ·  owner/repo'
-                : 'Go to: /code /issues /prs  ·  owner/repo  ·  search…'
+                ? 'Path: ..  src/  ../lib  ·  /code /issues  ·  owner/repo'
+                : '/code /issues /prs  ·  owner/repo  ·  search…'
             }
             className="input input-bordered w-full rounded-none border-0 border-b border-base-300 focus:outline-none"
             autoFocus

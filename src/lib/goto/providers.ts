@@ -1,52 +1,20 @@
 import { githubUrlToAppPath } from '@/lib/githubUrl';
 import { fuzzyMatch, type RecentRepo } from '@/lib/recentRepos';
-import {
-  isPathExpression,
-  resolveRepoPath,
-} from '@/lib/repoPath';
+import { isPathExpression } from '@/lib/repoPath';
+import { pathProvider } from './pathProvider';
 import { parseSlashCommand, slashMatches } from './slash';
 import type { GotoCandidate, GotoProvider } from './types';
 
+export { pathProvider };
+
 const GROUP = {
-  path: 'Go to path',
+  path: 'Path',
   here: 'This repository',
   jump: 'Jump',
   repos: 'Repositories',
   nav: 'Navigate',
   search: 'Search',
 } as const;
-
-/** Relative / absolute path inside the current code location. */
-export const pathProvider: GotoProvider = (q, ctx) => {
-  if (!ctx.code || !q) return [];
-  if (parseSlashCommand(q)) return [];
-  if (!isPathExpression(q, { inCode: true })) return [];
-
-  const resolved = resolveRepoPath(ctx.code.cwd, q);
-  if (resolved == null) return [];
-
-  const display = resolved || '/';
-  const { owner, name, refName, cwd } = ctx.code;
-
-  return [
-    {
-      id: 'path',
-      label: `Open ${display}`,
-      hint: cwd ? `from ${cwd}/` : 'from /',
-      value: `path ${q} ${resolved}`,
-      group: GROUP.path,
-      icon: 'path',
-      priority: 10,
-      action: {
-        kind: 'open-repo-path',
-        owner,
-        name,
-        ref: refName,
-        path: resolved,
-      },
-    },
-  ];
-};
 
 function sectionCandidates(
   owner: string,

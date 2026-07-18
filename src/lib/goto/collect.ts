@@ -2,7 +2,7 @@ import { defaultProviders } from './providers';
 import type { GotoCandidate, GotoContext, GotoProvider } from './types';
 
 const GROUP_ORDER = [
-  'Go to path',
+  'Path',
   'This repository',
   'Jump',
   'Repositories',

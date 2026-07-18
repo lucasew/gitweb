@@ -1,22 +1,24 @@
 /**
- * Resolve path expressions relative to a repo-relative cwd
- * (POSIX-style `.` / `..` / leading `/` for repo root).
+ * Repo-relative path resolution for goto / cmdk (POSIX-like).
  */
+
+export function stripSlashes(p: string): string {
+  return p.replace(/^\/+|\/+$/g, '');
+}
 
 export function cwdFromCodeLocation(loc: {
   mode: 'blob' | 'tree';
   path: string;
 }): string {
   if (loc.mode === 'tree') return stripSlashes(loc.path);
-  const p = stripSlashes(loc.path);
+  return dirnameRepo(loc.path);
+}
+
+function dirnameRepo(path: string): string {
+  const p = stripSlashes(path);
   if (!p) return '';
   const i = p.lastIndexOf('/');
   return i === -1 ? '' : p.slice(0, i);
-}
-
-/** Normalize to path without leading/trailing slashes ('' = repo root). */
-export function stripSlashes(p: string): string {
-  return p.replace(/^\/+|\/+$/g, '');
 }
 
 /**
@@ -31,11 +33,15 @@ export function resolveRepoPath(
   if (!raw) return null;
 
   const base = stripSlashes(baseDir);
-  const stack: string[] = [];
+  const stack: string[] = base ? base.split('/') : [];
 
   const segs = raw.startsWith('/')
     ? raw.split('/')
-    : [...(base ? base.split('/') : []), ...raw.split('/')];
+    : raw.split('/');
+
+  if (raw.startsWith('/')) {
+    stack.length = 0;
+  }
 
   for (const seg of segs) {
     if (!seg || seg === '.') continue;
@@ -43,7 +49,6 @@ export function resolveRepoPath(
       if (stack.length) stack.pop();
       continue;
     }
-    // reject weird segments
     if (seg === '...' || seg.includes('\0')) return null;
     stack.push(seg);
   }
@@ -51,12 +56,44 @@ export function resolveRepoPath(
   return stack.join('/');
 }
 
+/** Pure climb expression (`..`, `../..`, …) → number of ups, else null. */
+function pureUps(expression: string): number | null {
+  const t = expression.trim().replace(/\/+$/, '');
+  if (!t || t === '.') return null;
+  const parts = t.split('/');
+  if (parts.length === 0 || !parts.every((p) => p === '..')) return null;
+  return parts.length;
+}
+
 /**
- * Whether the command palette query should be treated as a path jump
- * while browsing code (not a slash command / owner/repo only).
+ * Resolve from a code location (blob or tree).
  *
- * @param inCode — on blob/tree pages, prefer repo-relative paths over
- *   owner/repo disambiguation (so `src` / `src/lib` work from root).
+ * - Pure `..` / `../..`: climb from the **current node** (file or folder).
+ *   From DESIGN.md, `..` → `/`. From src/lib/foo.ts, `..` → `src/lib`.
+ * - Mixed paths (`../x.ts`, `./y`, `src`): relative to the file’s directory
+ *   (blob) or the tree path (tree) — shell cwd semantics.
+ */
+export function resolveFromCodeLocation(
+  loc: { mode: 'blob' | 'tree'; path: string },
+  expression: string,
+): string | null {
+  const raw = expression.trim();
+  if (!raw) return null;
+
+  const cur = stripSlashes(loc.path);
+  const ups = pureUps(raw);
+  if (ups != null) {
+    let p = cur;
+    for (let i = 0; i < ups; i++) p = dirnameRepo(p);
+    return p;
+  }
+
+  const base = loc.mode === 'blob' ? dirnameRepo(cur) : cur;
+  return resolveRepoPath(base, raw);
+}
+
+/**
+ * Whether the query looks like a path jump (not /code, not owner/repo).
  */
 export function isPathExpression(
   q: string,
@@ -64,14 +101,12 @@ export function isPathExpression(
 ): boolean {
   const t = q.trim();
   if (!t || /\s/.test(t)) return false;
-  // slash commands for sections
   if (
     /^\/(code|issues|prs|pulls|pr|pull|issue|search|s)(\s|$)/i.test(t)
   ) {
     return false;
   }
   if (t.startsWith('.') || t.includes('..')) return true;
-  // absolute in-repo: / or /src/foo (not /search)
   if (t.startsWith('/')) {
     if (t === '/') return true;
     const first = t.slice(1).split('/')[0]?.toLowerCase() ?? '';
@@ -80,10 +115,8 @@ export function isPathExpression(
     }
     return true;
   }
-  // multi-segment relative
   if (t.includes('/')) {
     const parts = t.split('/');
-    // off code pages: `owner/repo` (two plain segments) is not a file path
     if (
       !opts?.inCode &&
       parts.length === 2 &&
@@ -96,9 +129,7 @@ export function isPathExpression(
     }
     return true;
   }
-  // bare filename with extension: index.css
   if (/\.[a-zA-Z0-9]{1,12}$/.test(t)) return true;
-  // bare directory / file name while already in a repo tree/blob
   if (opts?.inCode && /^[\w.@+-]+$/.test(t)) return true;
   return false;
 }
@@ -111,7 +142,6 @@ export function appPathForObject(
   kind: 'blob' | 'tree',
 ): string {
   const ref = encodeURIComponent(refName);
-  // Repo root: tree has a dedicated route without splat; empty blob is invalid → repo home
   if (!path) {
     if (kind === 'tree') return `/${owner}/${name}/tree/${ref}`;
     return `/${owner}/${name}`;
@@ -121,4 +151,9 @@ export function appPathForObject(
     .map((s) => encodeURIComponent(s))
     .join('/');
   return `/${owner}/${name}/${kind}/${ref}/${enc}`;
+}
+
+/** Display form for repo-relative path ('' → `/`). */
+export function formatRepoPath(path: string): string {
+  return path ? path : '/';
 }

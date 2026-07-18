@@ -3,6 +3,7 @@ import {
   appPathForObject,
   cwdFromCodeLocation,
   isPathExpression,
+  resolveFromCodeLocation,
   resolveRepoPath,
 } from '../repoPath';
 
@@ -48,8 +49,54 @@ describe('isPathExpression', () => {
   it('inCode: folders from root (no extension)', () => {
     expect(isPathExpression('src', { inCode: true })).toBe(true);
     expect(isPathExpression('src/lib', { inCode: true })).toBe(true);
-    // still owner/repo when not in code
     expect(isPathExpression('src/lib')).toBe(false);
+  });
+});
+
+describe('resolveFromCodeLocation', () => {
+  it('.. from root blob (DESIGN.md) → repo root', () => {
+    expect(
+      resolveFromCodeLocation({ mode: 'blob', path: 'DESIGN.md' }, '..'),
+    ).toBe('');
+  });
+
+  it('.. from nested blob → containing folder', () => {
+    expect(
+      resolveFromCodeLocation(
+        { mode: 'blob', path: 'src/lib/foo.ts' },
+        '..',
+      ),
+    ).toBe('src/lib');
+  });
+
+  it('../.. from nested blob → parent of containing folder', () => {
+    expect(
+      resolveFromCodeLocation(
+        { mode: 'blob', path: 'src/lib/foo.ts' },
+        '../..',
+      ),
+    ).toBe('src');
+  });
+
+  it('sibling file from blob', () => {
+    expect(
+      resolveFromCodeLocation(
+        { mode: 'blob', path: 'src/lib/foo.ts' },
+        './bar.ts',
+      ),
+    ).toBe('src/lib/bar.ts');
+  });
+
+  it('.. from tree climbs one level', () => {
+    expect(
+      resolveFromCodeLocation({ mode: 'tree', path: 'src/lib' }, '..'),
+    ).toBe('src');
+  });
+
+  it('folder from tree root', () => {
+    expect(
+      resolveFromCodeLocation({ mode: 'tree', path: '' }, 'src'),
+    ).toBe('src');
   });
 });
 
@@ -63,13 +110,6 @@ describe('appPathForObject', () => {
     );
     expect(appPathForObject('o', 'r', 'main', 'src', 'tree')).toBe(
       '/o/r/tree/main/src',
-    );
-  });
-
-  it('resolves .. to project root path', () => {
-    expect(resolveRepoPath('src/lib', '../..')).toBe('');
-    expect(appPathForObject('o', 'r', 'main', '', 'tree')).toBe(
-      '/o/r/tree/main',
     );
   });
 });

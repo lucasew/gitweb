@@ -10,3 +10,4 @@ export { collectGotoCandidates, groupCandidates } from './collect';
 export { executeGoto, type GotoExecuteDeps, type GotoExecuteResult } from './execute';
 export { parseSlashCommand } from './slash';
 export { defaultProviders } from './providers';
+export { pathProvider } from './pathProvider';
