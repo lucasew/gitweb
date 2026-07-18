@@ -62,6 +62,7 @@ const query = graphql`
         }
         baseRefName
         headRefName
+        headRefOid
         viewerLatestReview {
           id
           state
@@ -685,6 +686,7 @@ export function PullDetailPage({
               name={name}
               number={number}
               pullRequestId={pr.id}
+              headRef={pr.headRefOid || pr.headRefName}
               canReview={canReview}
               threads={threads}
               onThreadsChanged={refresh}

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { DiffFile, DiffView, DiffModeEnum, SplitSide } from '@git-diff-view/react';
 import '@git-diff-view/react/styles/diff-view-pure.css';
 import { graphql, useMutation } from 'react-relay';
+import { Link } from '@tanstack/react-router';
 import { fetchPullFiles, type RestPullFile } from '@/lib/rest';
 import { LoadingBlock } from '@/components/LoadingBlock';
 import { ErrorBanner } from '@/components/ErrorBanner';
@@ -13,6 +14,7 @@ import { cn } from '@/lib/cls';
 import { GithubMarkdown } from '@/components/GithubMarkdown';
 import { normalizeGithubPatch, patchFileNames } from '@/lib/githubPatch';
 import { langFromPath } from '@/lib/diffLang';
+import { githubBlobUrl } from '@/lib/permalinks';
 
 export type ReviewThreadSummary = {
   id: string;
@@ -35,6 +37,8 @@ type Props = {
   name: string;
   number: number;
   pullRequestId: string;
+  /** PR head commit SHA or branch name — blob permalinks for changed files */
+  headRef: string;
   canReview: boolean;
   threads: ReviewThreadSummary[];
   onThreadsChanged?: () => void;
@@ -291,6 +295,9 @@ function FileDiff({
   mode,
   canReview,
   pullRequestId,
+  owner,
+  name,
+  headRef,
   threads,
   onThreadsChanged,
 }: {
@@ -298,6 +305,9 @@ function FileDiff({
   mode: 'unified' | 'split';
   canReview: boolean;
   pullRequestId: string;
+  owner: string;
+  name: string;
+  headRef: string;
   threads: ReviewThreadSummary[];
   onThreadsChanged?: () => void;
 }) {
@@ -337,10 +347,31 @@ function FileDiff({
     file.status,
   );
 
+  const blobParams = {
+    owner,
+    name,
+    ref: headRef,
+    _splat: file.filename,
+  } as const;
+
   return (
     <div className="border border-base-300 rounded-box overflow-hidden w-full min-w-0">
       <div className="px-3 py-2 bg-base-200 border-b border-base-300 flex flex-wrap gap-2 items-center sticky top-0 z-10">
-        <span className="font-mono text-sm break-all min-w-0">{file.filename}</span>
+        <Link
+          to="/$owner/$name/blob/$ref/$"
+          params={blobParams}
+          className="font-mono text-sm break-all min-w-0 link link-hover"
+          title={`View ${file.filename} at PR head`}
+        >
+          {file.filename}
+        </Link>
+        <ExternalLink
+          className="btn btn-ghost btn-xs shrink-0 opacity-70"
+          href={githubBlobUrl(owner, name, headRef, file.filename)}
+          title="Open on GitHub"
+        >
+          ↗
+        </ExternalLink>
         <span className="text-success text-xs shrink-0">+{file.additions}</span>
         <span className="text-error text-xs shrink-0">-{file.deletions}</span>
         {fileThreads.length ? (
@@ -377,6 +408,7 @@ export function PullFilesDiff({
   name,
   number,
   pullRequestId,
+  headRef,
   canReview,
   threads,
   onThreadsChanged,
@@ -502,6 +534,9 @@ export function PullFilesDiff({
               mode={mode}
               canReview={canReview}
               pullRequestId={pullRequestId}
+              owner={owner}
+              name={name}
+              headRef={headRef}
               threads={threads}
               onThreadsChanged={onThreadsChanged}
             />

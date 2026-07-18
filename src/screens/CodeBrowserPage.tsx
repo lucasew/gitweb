@@ -4,8 +4,10 @@ import { useEffect, useState } from 'react';
 import type { CodeBrowserPageQuery } from './__generated__/CodeBrowserPageQuery.graphql';
 import { ExternalLink } from '@/components/ExternalLink';
 import { GithubMarkdown } from '@/components/GithubMarkdown';
+import { CodeBlobView } from '@/components/CodeBlobView';
 import { renderMarkdownGfm } from '@/lib/rest';
 import { LoadingBlock } from '@/components/LoadingBlock';
+import { githubBlobUrl } from '@/lib/permalinks';
 
 const query = graphql`
   query CodeBrowserPageQuery(
@@ -92,15 +94,16 @@ export function CodeBrowserPage({ owner, name, refName, path, mode }: Props) {
     expression,
   });
   const obj = data.repository?.object;
+  const ghBlob =
+    mode === 'blob' && path
+      ? githubBlobUrl(owner, name, refName, path)
+      : `https://github.com/${owner}/${name}/${mode}/${encodeURIComponent(refName)}${path ? `/${path}` : ''}`;
 
   if (!obj) {
     return (
       <div className="p-[clamp(0.75rem,2vw,1.25rem)] alert alert-warning">
         Not found: {expression}.{' '}
-        <ExternalLink
-          className="link"
-          href={`https://github.com/${owner}/${name}/${mode}/${refName}/${path}`}
-        >
+        <ExternalLink className="link" href={ghBlob}>
           Open on GitHub
         </ExternalLink>
       </div>
@@ -165,10 +168,7 @@ export function CodeBrowserPage({ owner, name, refName, path, mode }: Props) {
       return (
         <div className="p-[clamp(0.75rem,2vw,1.25rem)] alert alert-info">
           Binary file ({obj.byteSize ?? '?'} bytes).{' '}
-          <ExternalLink
-            className="link"
-            href={`https://github.com/${owner}/${name}/blob/${refName}/${path}`}
-          >
+          <ExternalLink className="link" href={ghBlob}>
             Open on GitHub
           </ExternalLink>
         </div>
@@ -179,30 +179,39 @@ export function CodeBrowserPage({ owner, name, refName, path, mode }: Props) {
       return (
         <div className="p-[clamp(0.75rem,2vw,1.25rem)] alert alert-warning">
           File too large to render in ghweb ({text.length} chars).{' '}
-          <ExternalLink
-            className="link"
-            href={`https://github.com/${owner}/${name}/blob/${refName}/${path}`}
-          >
+          <ExternalLink className="link" href={ghBlob}>
             Open on GitHub
           </ExternalLink>
         </div>
       );
     }
     const isMd = /\.(md|markdown|mdx)$/i.test(path);
+
     return (
-      <div className="p-[clamp(0.75rem,2vw,1.25rem)] w-full min-w-0 space-y-2">
-        <div className="text-sm opacity-60 font-mono break-all">
-          {refName}:{path}
-        </div>
-        {isMd ? (
-          <div className="border border-base-300 rounded-box p-[clamp(0.75rem,2vw,1.25rem)] w-full min-w-0">
-            <MarkdownBlob text={text} context={`${owner}/${name}`} />
+      <div className="flex flex-col w-full min-w-0 min-h-[calc(100vh-3rem)]">
+        <div className="flex flex-wrap items-center gap-2 px-[clamp(0.75rem,2vw,1.25rem)] py-2 border-b border-base-300 bg-base-100 sticky top-0 z-10">
+          <div className="text-sm font-mono break-all min-w-0 flex-1 opacity-80">
+            {refName}:{path}
           </div>
-        ) : (
-          <pre className="bg-base-200 border border-base-300 rounded-box p-3 text-xs overflow-auto max-h-[min(70vh,40rem)] w-full">
-            <code>{text}</code>
-          </pre>
-        )}
+          <ExternalLink className="btn btn-xs btn-ghost shrink-0" href={ghBlob}>
+            GitHub
+          </ExternalLink>
+        </div>
+        <div className="flex-1 min-w-0 p-[clamp(0.5rem,1.5vw,1rem)] w-full">
+          {isMd ? (
+            <div className="border border-base-300 rounded-box p-[clamp(0.75rem,2vw,1.25rem)] w-full min-w-0 max-w-[min(100%,48rem)] mx-auto">
+              <MarkdownBlob text={text} context={`${owner}/${name}`} />
+            </div>
+          ) : (
+            <CodeBlobView
+              owner={owner}
+              name={name}
+              refName={refName}
+              path={path}
+              text={text}
+            />
+          )}
+        </div>
       </div>
     );
   }
