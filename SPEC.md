@@ -223,7 +223,8 @@ Use the shared `ExternalLink` component (or equivalent) so this is not forgotten
 | Dates | `Intl` first; date-fns only if needed | Prefer zero dep |
 | className merge | clsx (+ tailwind-merge if needed) | |
 | Long file lists / huge blobs | @tanstack/react-virtual | Code browser + large diffs if lib doesn’t virtualize enough |
-| Syntax highlight (code browser) | Phase: plain first; **shiki** if we need real highlighting | Don’t block v1 |
+| Syntax highlight (diffs) | **Built-in lowlight** via `@git-diff-view` (`diffViewHighlight` + path→lang map) | Full hljs grammar set (`createLowlight(all)`); not shiki |
+| Syntax highlight (code browser) | Phase: plain first; **shiki** later if needed | Don’t block v1 |
 
 **Write our own** (product glue, GitHub-specific, thin wrappers):
 

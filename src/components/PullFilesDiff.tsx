@@ -12,6 +12,7 @@ import type { PullFilesDiffThreadMutation } from './__generated__/PullFilesDiffT
 import { cn } from '@/lib/cls';
 import { GithubMarkdown } from '@/components/GithubMarkdown';
 import { normalizeGithubPatch, patchFileNames } from '@/lib/githubPatch';
+import { langFromPath } from '@/lib/diffLang';
 
 export type ReviewThreadSummary = {
   id: string;
@@ -187,8 +188,19 @@ function SafeDiffView({
 
   const { diffFile, parseError } = useMemo(() => {
     try {
-      const file = new DiffFile(oldName, '', newName, '', hunks);
+      // Prefer new path for renames; map extension → hljs id (rs→rust, etc.)
+      const lang = langFromPath(newName || oldName || path);
+      const file = new DiffFile(
+        oldName,
+        '',
+        newName,
+        '',
+        hunks,
+        lang,
+        lang,
+      );
       file.initTheme(theme);
+      // init() = initRaw (compose content from hunks) + initSyntax (lowlight, all langs)
       file.init();
       file.buildSplitDiffLines();
       file.buildUnifiedDiffLines();
@@ -205,7 +217,7 @@ function SafeDiffView({
         parseError: e instanceof Error ? e.message : String(e),
       };
     }
-  }, [hunks, oldName, newName, theme]);
+  }, [hunks, oldName, newName, path, theme]);
 
   if (parseError || !diffFile) {
     return (
@@ -228,7 +240,7 @@ function SafeDiffView({
       diffViewMode={mode === 'split' ? DiffModeEnum.Split : DiffModeEnum.Unified}
       diffViewTheme={theme}
       diffViewWrap
-      diffViewHighlight={false}
+      diffViewHighlight
       diffViewAddWidget={canReview}
       renderExtendLine={({ data: threadList }) => (
         <div className="bg-base-200/80 border-y border-base-300 px-3 py-2 space-y-2 w-full">

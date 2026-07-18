@@ -3,8 +3,8 @@ import { readFileSync, existsSync } from 'node:fs';
 import { DiffFile } from '@git-diff-view/react';
 import { normalizeGithubPatch } from '../githubPatch';
 
-function parse(hunks: string[], name = 'foo.nix') {
-  const file = new DiffFile(name, '', name, '', hunks);
+function parse(hunks: string[], name = 'foo.nix', lang = 'nix') {
+  const file = new DiffFile(name, '', name, '', hunks, lang, lang);
   file.initTheme('light');
   file.init();
   file.buildUnifiedDiffLines();
@@ -60,5 +60,21 @@ describe('normalizeGithubPatch', () => {
 
   it('returns empty for no hunks', () => {
     expect(normalizeGithubPatch('Binary files differ', 'x.bin')).toEqual([]);
+  });
+
+  it('runs syntax highlighting when language is set', () => {
+    const patch = [
+      '@@ -1,3 +1,3 @@',
+      ' function hi() {',
+      '-  return 1;',
+      '+  return 2;',
+      ' }',
+    ].join('\n');
+    const hunks = normalizeGithubPatch(patch, 'hi.ts');
+    const file = parse(hunks, 'hi.ts', 'typescript');
+    // After init() + highlight, at least one syntax line should exist
+    const line = file.getNewSyntaxLine(1) ?? file.getNewSyntaxLine(2);
+    expect(line).toBeTruthy();
+    expect(file.unifiedLineLength).toBeGreaterThan(0);
   });
 });
