@@ -17,6 +17,8 @@ import type { PullDetailPageCloseMutation } from './__generated__/PullDetailPage
 import type { PullDetailPageReviewMutation } from './__generated__/PullDetailPageReviewMutation.graphql';
 import type { PullDetailPageSubmitReviewMutation } from './__generated__/PullDetailPageSubmitReviewMutation.graphql';
 import type { PullDetailPageDiscardReviewMutation } from './__generated__/PullDetailPageDiscardReviewMutation.graphql';
+import type { PullDetailPageConvertToDraftMutation } from './__generated__/PullDetailPageConvertToDraftMutation.graphql';
+import type { PullDetailPageReadyForReviewMutation } from './__generated__/PullDetailPageReadyForReviewMutation.graphql';
 import { useToast } from '@/lib/toast';
 import { useLiveQuery } from '@/lib/useLiveQuery';
 import { LoadingBlock } from '@/components/LoadingBlock';
@@ -228,6 +230,30 @@ const discardReviewMutation = graphql`
   }
 `;
 
+const convertToDraftMutation = graphql`
+  mutation PullDetailPageConvertToDraftMutation($id: ID!) {
+    convertPullRequestToDraft(input: { pullRequestId: $id }) {
+      pullRequest {
+        id
+        isDraft
+        state
+      }
+    }
+  }
+`;
+
+const readyForReviewMutation = graphql`
+  mutation PullDetailPageReadyForReviewMutation($id: ID!) {
+    markPullRequestReadyForReview(input: { pullRequestId: $id }) {
+      pullRequest {
+        id
+        isDraft
+        state
+      }
+    }
+  }
+`;
+
 export type PullTab = 'conversation' | 'files';
 
 type Props = {
@@ -289,6 +315,10 @@ export function PullDetailPage({
     useMutation<PullDetailPageSubmitReviewMutation>(submitReviewMutation);
   const [commitDiscardReview, discardInFlight] =
     useMutation<PullDetailPageDiscardReviewMutation>(discardReviewMutation);
+  const [commitConvertToDraft, convertToDraftInFlight] =
+    useMutation<PullDetailPageConvertToDraftMutation>(convertToDraftMutation);
+  const [commitReadyForReview, readyForReviewInFlight] =
+    useMutation<PullDetailPageReadyForReviewMutation>(readyForReviewMutation);
 
   if (!pr) {
     return (
@@ -366,6 +396,7 @@ export function PullDetailPage({
   type ReviewEvent = 'APPROVE' | 'COMMENT' | 'REQUEST_CHANGES';
 
   const reviewBusy = reviewInFlight || submitInFlight || discardInFlight;
+  const draftBusy = convertToDraftInFlight || readyForReviewInFlight;
 
   const runSubmitPending = (
     reviewId: string,
@@ -515,6 +546,68 @@ export function PullDetailPage({
           <div className="flex flex-wrap items-center gap-1.5 shrink-0 ms-auto pb-1">
             {pendingReview ? (
               <ReviewStateBadge state="PENDING" label="Pending review" />
+            ) : null}
+
+            {canReview ? (
+              <button
+                type="button"
+                className={
+                  pr.isDraft ? 'btn btn-sm btn-primary' : 'btn btn-sm btn-outline'
+                }
+                disabled={draftBusy}
+                title={
+                  pr.isDraft
+                    ? 'Mark this pull request as ready for review'
+                    : 'Convert this pull request to a draft'
+                }
+                onClick={() => {
+                  if (pr.isDraft) {
+                    commitReadyForReview({
+                      variables: { id: pr.id },
+                      optimisticResponse: {
+                        markPullRequestReadyForReview: {
+                          pullRequest: {
+                            id: pr.id,
+                            isDraft: false,
+                            state: pr.state,
+                          },
+                        },
+                      },
+                      onCompleted: () => {
+                        toast.info('Marked ready for review');
+                        refresh();
+                      },
+                      onError: (e) =>
+                        toast.error('Could not mark ready', e.message),
+                    });
+                  } else {
+                    commitConvertToDraft({
+                      variables: { id: pr.id },
+                      optimisticResponse: {
+                        convertPullRequestToDraft: {
+                          pullRequest: {
+                            id: pr.id,
+                            isDraft: true,
+                            state: pr.state,
+                          },
+                        },
+                      },
+                      onCompleted: () => {
+                        toast.info('Converted to draft');
+                        refresh();
+                      },
+                      onError: (e) =>
+                        toast.error('Could not convert to draft', e.message),
+                    });
+                  }
+                }}
+              >
+                {draftBusy
+                  ? 'Updating…'
+                  : pr.isDraft
+                    ? 'Ready for review'
+                    : 'Convert to draft'}
+              </button>
             ) : null}
 
             {canReview ? (
