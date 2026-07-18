@@ -10,6 +10,7 @@ import { PathBreadcrumb } from '@/components/PathBreadcrumb';
 import { renderMarkdownGfm } from '@/lib/rest';
 import { LoadingBlock } from '@/components/LoadingBlock';
 import { githubBlobUrl } from '@/lib/permalinks';
+import { gitObjectExpression } from '@/lib/repoPath';
 
 const query = graphql`
   query CodeBrowserPageQuery(
@@ -89,7 +90,8 @@ function MarkdownBlob({
 }
 
 export function CodeBrowserPage({ owner, name, refName, path, mode }: Props) {
-  const expression = path ? `${refName}:${path}` : refName;
+  // Bare ref/SHA → Commit; root tree needs trailing colon (`main:` / `abc123:`).
+  const expression = gitObjectExpression(refName, path);
   const data = useLazyLoadQuery<CodeBrowserPageQuery>(
     query,
     { owner, name, expression },

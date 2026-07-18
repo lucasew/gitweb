@@ -189,6 +189,18 @@ export function appPathForObject(
   return `/${owner}/${name}/${kind}/${ref}/${enc}`;
 }
 
+/**
+ * GitHub `repository.object(expression:)` for a ref + optional path.
+ *
+ * Bare `ref` / commit SHA resolves to a Commit (or Tag), not a Tree.
+ * Root tree must use `ref:` (trailing colon); nested uses `ref:path`.
+ */
+export function gitObjectExpression(refName: string, path: string): string {
+  const ref = refName.trim();
+  const p = stripSlashes(path);
+  return p ? `${ref}:${p}` : `${ref}:`;
+}
+
 /** Display form for repo-relative path ('' → `/`). */
 export function formatRepoPath(path: string): string {
   return path ? path : '/';

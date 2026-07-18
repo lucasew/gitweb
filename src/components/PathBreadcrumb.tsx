@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import { ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/cls';
+import { appPathForObject } from '@/lib/repoPath';
 
 type Props = {
   owner: string;
@@ -18,6 +19,9 @@ type Props = {
 /**
  * Breadcrumb for `ref / a / b / file.ext` under a repo.
  * Intermediate segments open the tree; the final blob name is plain text.
+ *
+ * Uses absolute path strings (not param templates) so blob `_splat` never
+ * leaks into the branch / intermediate tree links.
  */
 export function PathBreadcrumb({
   owner,
@@ -34,6 +38,7 @@ export function PathBreadcrumb({
   const linkCls = dense
     ? 'btn btn-ghost btn-xs px-1 h-7 min-h-0 font-mono font-normal max-w-[10rem] truncate'
     : 'link link-hover font-mono';
+  const treeRootHref = appPathForObject(owner, name, refName, '', 'tree');
 
   return (
     <nav
@@ -46,8 +51,7 @@ export function PathBreadcrumb({
       )}
     >
       <Link
-        to="/$owner/$name/tree/$ref"
-        params={{ owner, name, ref: refName }}
+        to={treeRootHref}
         className={cn(
           linkCls,
           !dense && 'opacity-80 shrink-0',
@@ -62,6 +66,7 @@ export function PathBreadcrumb({
         const isLast = i === parts.length - 1;
         const subPath = parts.slice(0, i + 1).join('/');
         const crumbIsBlob = isBlob && isLast;
+        const treeHref = appPathForObject(owner, name, refName, subPath, 'tree');
 
         return (
           <span
@@ -84,8 +89,7 @@ export function PathBreadcrumb({
               </span>
             ) : (
               <Link
-                to="/$owner/$name/tree/$ref/$"
-                params={{ owner, name, ref: refName, _splat: subPath }}
+                to={treeHref}
                 className={cn(
                   linkCls,
                   'truncate min-w-0',

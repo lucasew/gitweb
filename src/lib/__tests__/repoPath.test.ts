@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   appPathForObject,
   cwdFromCodeLocation,
+  gitObjectExpression,
   isPathExpression,
   relativeToLocation,
   resolveFromCodeLocation,
@@ -114,6 +115,24 @@ describe('appPathForObject', () => {
     );
     expect(appPathForObject('o', 'r', 'main', 'src/a.ts', 'blob')).toBe(
       '/o/r/blob/main/src/a.ts',
+    );
+  });
+});
+
+describe('gitObjectExpression', () => {
+  const sha = 'c5de9d90c128b77ddc31d9f55b1de5c65d6ab339';
+
+  it('uses trailing colon for root tree (branch or commit)', () => {
+    expect(gitObjectExpression('main', '')).toBe('main:');
+    expect(gitObjectExpression(sha, '')).toBe(`${sha}:`);
+  });
+
+  it('uses ref:path for nested tree/blob', () => {
+    expect(gitObjectExpression('main', 'tests/integration.rs')).toBe(
+      'main:tests/integration.rs',
+    );
+    expect(gitObjectExpression(sha, 'tests/integration.rs')).toBe(
+      `${sha}:tests/integration.rs`,
     );
   });
 });
