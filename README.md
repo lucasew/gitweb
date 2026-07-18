@@ -19,10 +19,16 @@ mise run dev
 Paste a PAT at the login screen (`sessionStorage`, per tab).
 
 ```bash
-mise run format   # workspaced codebase format
-mise run lint     # workspaced codebase lint
-mise run ci
+mise run format        # workspaced codebase format
+mise run lint          # workspaced codebase lint
+mise run typecheck
+mise run test
+mise run build
+mise run ci            # full offline CI (what GitHub Actions runs)
+mise run schema-refresh  # schema + relay (scheduled job)
 ```
+
+GitHub Actions must only invoke **`mise run …`** tasks (never `mise exec`).
 
 ## Stack
 

@@ -5,6 +5,7 @@ node = "24"
 _.path = ["./node_modules/.bin"]
 
 [tasks.install]
+description = "Install JS dependencies (corepack + pnpm)"
 run = "corepack enable && corepack prepare pnpm@10.12.1 --activate && pnpm install"
 
 [tasks."codegen:schema"]
@@ -16,26 +17,41 @@ description = "Run relay-compiler"
 run = "pnpm exec relay-compiler"
 
 [tasks.codegen]
+description = "All codegen (codegen:*)"
 depends = ["codegen:*"]
 
 [tasks.format]
+description = "Format via workspaced"
 run = "workspaced codebase format"
 
 [tasks.fmt]
 run = "workspaced codebase format"
 
 [tasks.lint]
+description = "Lint via workspaced"
 run = "workspaced codebase lint"
 
+[tasks.typecheck]
+description = "TypeScript check"
+run = "pnpm exec tsc --noEmit -p tsconfig.json"
+
 [tasks.test]
+description = "Unit tests"
 run = "pnpm exec vitest run"
 
 [tasks.build]
-depends = ["codegen:relay"]
-run = "pnpm exec tsc --noEmit -p tsconfig.json && pnpm exec vite build"
+description = "Relay codegen + typecheck + vite production build"
+depends = ["codegen:relay", "typecheck"]
+run = "pnpm exec vite build"
 
 [tasks.ci]
-depends = ["test", "build"]
+description = "Full CI (offline): relay, typecheck, test, build"
+depends = ["codegen:relay", "typecheck", "test", "build"]
 
 [tasks.dev]
+description = "Vite dev server"
 run = "pnpm exec vite"
+
+[tasks."schema-refresh"]
+description = "Schema introspect + relay (for scheduled PR job)"
+depends = ["codegen:schema", "codegen:relay"]

@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<2ffa09d1260834f3674938bef5941f31>>
+ * @generated SignedSource<<533945e61834cc411944bc7dcd9b815a>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -33,14 +33,16 @@ export type IssueDetailPageQuery$data = {
       readonly body: string;
       readonly closedAt: any | null | undefined;
       readonly comments: {
-        readonly nodes: ReadonlyArray<{
-          readonly author: {
-            readonly avatarUrl: any;
-            readonly login: string;
+        readonly edges: ReadonlyArray<{
+          readonly node: {
+            readonly author: {
+              readonly avatarUrl: any;
+              readonly login: string;
+            } | null | undefined;
+            readonly body: string;
+            readonly createdAt: any;
+            readonly id: string;
           } | null | undefined;
-          readonly body: string;
-          readonly createdAt: any;
-          readonly id: string;
         } | null | undefined> | null | undefined;
       };
       readonly createdAt: any;
@@ -272,14 +274,46 @@ v19 = {
   ],
   "storageKey": "assignees(first:10)"
 },
-v20 = [
-  {
-    "kind": "Literal",
-    "name": "first",
-    "value": 50
-  }
-],
+v20 = {
+  "alias": null,
+  "args": null,
+  "kind": "ScalarField",
+  "name": "__typename",
+  "storageKey": null
+},
 v21 = {
+  "alias": null,
+  "args": null,
+  "kind": "ScalarField",
+  "name": "cursor",
+  "storageKey": null
+},
+v22 = {
+  "alias": null,
+  "args": null,
+  "concreteType": "PageInfo",
+  "kind": "LinkedField",
+  "name": "pageInfo",
+  "plural": false,
+  "selections": [
+    {
+      "alias": null,
+      "args": null,
+      "kind": "ScalarField",
+      "name": "endCursor",
+      "storageKey": null
+    },
+    {
+      "alias": null,
+      "args": null,
+      "kind": "ScalarField",
+      "name": "hasNextPage",
+      "storageKey": null
+    }
+  ],
+  "storageKey": null
+},
+v23 = {
   "alias": null,
   "args": null,
   "concreteType": null,
@@ -287,13 +321,7 @@ v21 = {
   "name": "author",
   "plural": false,
   "selections": [
-    {
-      "alias": null,
-      "args": null,
-      "kind": "ScalarField",
-      "name": "__typename",
-      "storageKey": null
-    },
+    (v20/*: any*/),
     (v15/*: any*/),
     (v16/*: any*/),
     {
@@ -306,7 +334,14 @@ v21 = {
     }
   ],
   "storageKey": null
-};
+},
+v24 = [
+  {
+    "kind": "Literal",
+    "name": "first",
+    "value": 50
+  }
+];
 return {
   "fragment": {
     "argumentDefinitions": [
@@ -348,30 +383,44 @@ return {
               (v18/*: any*/),
               (v19/*: any*/),
               {
-                "alias": null,
-                "args": (v20/*: any*/),
+                "alias": "comments",
+                "args": null,
                 "concreteType": "IssueCommentConnection",
                 "kind": "LinkedField",
-                "name": "comments",
+                "name": "__IssueDetailPage_comments_connection",
                 "plural": false,
                 "selections": [
                   {
                     "alias": null,
                     "args": null,
-                    "concreteType": "IssueComment",
+                    "concreteType": "IssueCommentEdge",
                     "kind": "LinkedField",
-                    "name": "nodes",
+                    "name": "edges",
                     "plural": true,
                     "selections": [
-                      (v5/*: any*/),
-                      (v8/*: any*/),
-                      (v11/*: any*/),
-                      (v17/*: any*/)
+                      {
+                        "alias": null,
+                        "args": null,
+                        "concreteType": "IssueComment",
+                        "kind": "LinkedField",
+                        "name": "node",
+                        "plural": false,
+                        "selections": [
+                          (v5/*: any*/),
+                          (v8/*: any*/),
+                          (v11/*: any*/),
+                          (v17/*: any*/),
+                          (v20/*: any*/)
+                        ],
+                        "storageKey": null
+                      },
+                      (v21/*: any*/)
                     ],
                     "storageKey": null
-                  }
+                  },
+                  (v22/*: any*/)
                 ],
-                "storageKey": "comments(first:50)"
+                "storageKey": null
               }
             ],
             "storageKey": null
@@ -419,12 +468,12 @@ return {
               (v12/*: any*/),
               (v13/*: any*/),
               (v14/*: any*/),
-              (v21/*: any*/),
+              (v23/*: any*/),
               (v18/*: any*/),
               (v19/*: any*/),
               {
                 "alias": null,
-                "args": (v20/*: any*/),
+                "args": (v24/*: any*/),
                 "concreteType": "IssueCommentConnection",
                 "kind": "LinkedField",
                 "name": "comments",
@@ -433,20 +482,43 @@ return {
                   {
                     "alias": null,
                     "args": null,
-                    "concreteType": "IssueComment",
+                    "concreteType": "IssueCommentEdge",
                     "kind": "LinkedField",
-                    "name": "nodes",
+                    "name": "edges",
                     "plural": true,
                     "selections": [
-                      (v5/*: any*/),
-                      (v8/*: any*/),
-                      (v11/*: any*/),
+                      {
+                        "alias": null,
+                        "args": null,
+                        "concreteType": "IssueComment",
+                        "kind": "LinkedField",
+                        "name": "node",
+                        "plural": false,
+                        "selections": [
+                          (v5/*: any*/),
+                          (v8/*: any*/),
+                          (v11/*: any*/),
+                          (v23/*: any*/),
+                          (v20/*: any*/)
+                        ],
+                        "storageKey": null
+                      },
                       (v21/*: any*/)
                     ],
                     "storageKey": null
-                  }
+                  },
+                  (v22/*: any*/)
                 ],
                 "storageKey": "comments(first:50)"
+              },
+              {
+                "alias": null,
+                "args": (v24/*: any*/),
+                "filters": null,
+                "handle": "connection",
+                "key": "IssueDetailPage_comments",
+                "kind": "LinkedHandle",
+                "name": "comments"
               }
             ],
             "storageKey": null
@@ -458,16 +530,29 @@ return {
     ]
   },
   "params": {
-    "cacheID": "1f3fc6ad5455f0797bea85db13f8f65c",
+    "cacheID": "40dfff32ff1a93865fc70df242f1e738",
     "id": null,
-    "metadata": {},
+    "metadata": {
+      "connection": [
+        {
+          "count": null,
+          "cursor": null,
+          "direction": "forward",
+          "path": [
+            "repository",
+            "issue",
+            "comments"
+          ]
+        }
+      ]
+    },
     "name": "IssueDetailPageQuery",
     "operationKind": "query",
-    "text": "query IssueDetailPageQuery(\n  $owner: String!\n  $name: String!\n  $number: Int!\n) {\n  repository(owner: $owner, name: $name) {\n    issue(number: $number) {\n      id\n      number\n      title\n      body\n      state\n      stateReason\n      createdAt\n      updatedAt\n      closedAt\n      url\n      author {\n        __typename\n        login\n        avatarUrl\n        ... on Node {\n          __isNode: __typename\n          id\n        }\n      }\n      labels(first: 20) {\n        nodes {\n          id\n          name\n          color\n        }\n      }\n      assignees(first: 10) {\n        nodes {\n          id\n          login\n          avatarUrl\n        }\n      }\n      comments(first: 50) {\n        nodes {\n          id\n          body\n          createdAt\n          author {\n            __typename\n            login\n            avatarUrl\n            ... on Node {\n              __isNode: __typename\n              id\n            }\n          }\n        }\n      }\n    }\n    id\n  }\n}\n"
+    "text": "query IssueDetailPageQuery(\n  $owner: String!\n  $name: String!\n  $number: Int!\n) {\n  repository(owner: $owner, name: $name) {\n    issue(number: $number) {\n      id\n      number\n      title\n      body\n      state\n      stateReason\n      createdAt\n      updatedAt\n      closedAt\n      url\n      author {\n        __typename\n        login\n        avatarUrl\n        ... on Node {\n          __isNode: __typename\n          id\n        }\n      }\n      labels(first: 20) {\n        nodes {\n          id\n          name\n          color\n        }\n      }\n      assignees(first: 10) {\n        nodes {\n          id\n          login\n          avatarUrl\n        }\n      }\n      comments(first: 50) {\n        edges {\n          node {\n            id\n            body\n            createdAt\n            author {\n              __typename\n              login\n              avatarUrl\n              ... on Node {\n                __isNode: __typename\n                id\n              }\n            }\n            __typename\n          }\n          cursor\n        }\n        pageInfo {\n          endCursor\n          hasNextPage\n        }\n      }\n    }\n    id\n  }\n}\n"
   }
 };
 })();
 
-(node as any).hash = "ce96a421ad37cf06a817c677f5b74e6f";
+(node as any).hash = "8a668d24d94c605c186a3c14dcc9336e";
 
 export default node;

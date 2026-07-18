@@ -261,10 +261,12 @@ Checked-in artifacts:
 | `mise run codegen` | **depends on `codegen:*`** (runs all codegen subtasks, including schema + relay) |
 | `mise run fmt` / `format` | **`workspaced codebase format`** (repo root; same as other LEWTEC/own projects) |
 | `mise run lint` | **`workspaced codebase lint`** (path defaults per workspaced; configure via workspaced, not ad-hoc prettier/eslint scripts) |
+| `mise run typecheck` | `tsc --noEmit` |
 | `mise run test` | vitest |
-| `mise run build` | codegen + vite build |
-| `mise run ci` | lint + test + build (no network schema fetch unless a subtask is invoked explicitly) |
-| `mise run dev` | vite dev (relay watch or pre-codegen) |
+| `mise run build` | depends `codegen:relay` + `typecheck`, then vite build |
+| `mise run ci` | `codegen:relay` + `typecheck` + `test` + `build` (no network schema; **no `mise exec`**) |
+| `mise run schema-refresh` | `codegen:schema` + `codegen:relay` (scheduled PR job) |
+| `mise run dev` | vite dev |
 
 Mise shape (illustrative):
 
@@ -281,15 +283,15 @@ depends = ["codegen:*"]
 
 Day-to-day after editing queries only: prefer **`mise run codegen:relay`** (no network). Full refresh: **`mise run codegen`** (schema + relay) or `codegen:schema` then `codegen:relay`.
 
-**Schema update PR workflow** (GitHub Actions):
+**Schema update PR workflow** (GitHub Actions — only `mise run …`, never `mise exec`):
 
 1. Schedule (e.g. weekly) + `workflow_dispatch`  
-2. Checkout; install; `mise run codegen:schema` with a bot/PAT that can introspect  
-3. `mise run codegen:relay` then `mise run format` (or `mise run codegen` + `format`)  
-4. If git diff nonempty: commit on a branch, **open/update a PR** (“chore: refresh GitHub GraphQL schema”)  
-5. CI on that PR runs full `mise run ci`  
+2. Checkout; `mise run install`  
+3. `mise run schema-refresh` (token from env)  
+4. If git diff nonempty: open/update PR (“chore: refresh GitHub GraphQL schema”)  
+5. CI on that PR: `mise run install` then **`mise run ci` only**
 
-**CI note:** default `mise run ci` / `build` should depend on **`codegen:relay`** (and other offline generators), not necessarily `codegen:schema`, so PRs don’t need network introspection. Schema refresh job is the one that runs `codegen:schema`.
+**CI note:** `mise run ci` is offline (no schema introspect). Schema refresh job alone hits the network.
 
 **Format / lint** are not hand-rolled Prettier/ESLint mise one-liners — they go through **workspaced** so tool versions and rules stay consistent with the rest of the workspace. Project still has ESLint/Prettier (or whatever workspaced configures) as the engines; invocation is always:
 

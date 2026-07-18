@@ -1,4 +1,5 @@
 import { graphql, useLazyLoadQuery, useMutation } from 'react-relay';
+import { ConnectionHandler } from 'relay-runtime';
 import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -6,14 +7,12 @@ import type { IssueDetailPageQuery } from './__generated__/IssueDetailPageQuery.
 import type { IssueDetailPageCloseMutation } from './__generated__/IssueDetailPageCloseMutation.graphql';
 import type { IssueDetailPageReopenMutation } from './__generated__/IssueDetailPageReopenMutation.graphql';
 import type { IssueDetailPageCommentMutation } from './__generated__/IssueDetailPageCommentMutation.graphql';
+import type { IssueDetailPageTitleMutation } from './__generated__/IssueDetailPageTitleMutation.graphql';
 import { useToast } from '@/lib/toast';
+import { useLiveQuery } from '@/lib/useLiveQuery';
 
 const query = graphql`
-  query IssueDetailPageQuery(
-    $owner: String!
-    $name: String!
-    $number: Int!
-  ) {
+  query IssueDetailPageQuery($owner: String!, $name: String!, $number: Int!) {
     repository(owner: $owner, name: $name) {
       issue(number: $number) {
         id
@@ -44,14 +43,17 @@ const query = graphql`
             avatarUrl
           }
         }
-        comments(first: 50) {
-          nodes {
-            id
-            body
-            createdAt
-            author {
-              login
-              avatarUrl
+        comments(first: 50)
+          @connection(key: "IssueDetailPage_comments") {
+          edges {
+            node {
+              id
+              body
+              createdAt
+              author {
+                login
+                avatarUrl
+              }
             }
           }
         }
@@ -90,6 +92,7 @@ const commentMutation = graphql`
   mutation IssueDetailPageCommentMutation($id: ID!, $body: String!) {
     addComment(input: { subjectId: $id, body: $body }) {
       commentEdge {
+        cursor
         node {
           id
           body
@@ -104,18 +107,32 @@ const commentMutation = graphql`
   }
 `;
 
+const titleMutation = graphql`
+  mutation IssueDetailPageTitleMutation($id: ID!, $title: String!) {
+    updateIssue(input: { id: $id, title: $title }) {
+      issue {
+        id
+        title
+      }
+    }
+  }
+`;
+
 type Props = { owner: string; name: string; number: number };
 
 export function IssueDetailPage({ owner, name, number }: Props) {
   const toast = useToast();
-  const data = useLazyLoadQuery<IssueDetailPageQuery>(
-    query,
-    { owner, name, number },
-    { fetchPolicy: 'store-and-network' },
-  );
+  const variables = { owner, name, number };
+  const data = useLazyLoadQuery<IssueDetailPageQuery>(query, variables, {
+    fetchPolicy: 'store-and-network',
+  });
+  useLiveQuery(query, variables);
+
   const issue = data.repository?.issue;
   const [body, setBody] = useState('');
   const [metaOpen, setMetaOpen] = useState(false);
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [titleDraft, setTitleDraft] = useState('');
 
   const [commitClose, closeInFlight] =
     useMutation<IssueDetailPageCloseMutation>(closeMutation);
@@ -123,6 +140,8 @@ export function IssueDetailPage({ owner, name, number }: Props) {
     useMutation<IssueDetailPageReopenMutation>(reopenMutation);
   const [commitComment, commentInFlight] =
     useMutation<IssueDetailPageCommentMutation>(commentMutation);
+  const [commitTitle, titleInFlight] =
+    useMutation<IssueDetailPageTitleMutation>(titleMutation);
 
   if (!issue) {
     return (
@@ -141,18 +160,63 @@ export function IssueDetailPage({ owner, name, number }: Props) {
   }
 
   const open = issue.state === 'OPEN';
+  const commentNodes =
+    issue.comments?.edges?.map((e) => e?.node).filter(Boolean) ?? [];
 
   return (
     <div className="flex flex-col min-h-[calc(100vh-3rem)] max-w-3xl mx-auto w-full">
       <div className="p-3 md:p-4 space-y-3 flex-1 pb-24">
         <div className="flex flex-wrap items-start gap-2">
-          <h1 className="text-xl font-semibold grow">
-            {issue.title}{' '}
-            <span className="opacity-50 font-normal">#{issue.number}</span>
-          </h1>
-          <span
-            className={`badge ${open ? 'badge-success' : 'badge-ghost'}`}
-          >
+          {editingTitle ? (
+            <div className="flex flex-wrap gap-2 grow w-full">
+              <input
+                className="input input-bordered input-sm flex-1 min-w-[12rem]"
+                value={titleDraft}
+                onChange={(e) => setTitleDraft(e.target.value)}
+              />
+              <button
+                type="button"
+                className="btn btn-sm btn-primary"
+                disabled={titleInFlight || !titleDraft.trim()}
+                onClick={() => {
+                  const t = titleDraft.trim();
+                  commitTitle({
+                    variables: { id: issue.id, title: t },
+                    optimisticResponse: {
+                      updateIssue: { issue: { id: issue.id, title: t } },
+                    },
+                    onCompleted: () => setEditingTitle(false),
+                    onError: (e) => toast.error('Title update failed', e.message),
+                  });
+                }}
+              >
+                Save
+              </button>
+              <button
+                type="button"
+                className="btn btn-sm btn-ghost"
+                onClick={() => setEditingTitle(false)}
+              >
+                Cancel
+              </button>
+            </div>
+          ) : (
+            <h1 className="text-xl font-semibold grow">
+              <button
+                type="button"
+                className="text-left hover:underline"
+                onClick={() => {
+                  setTitleDraft(issue.title);
+                  setEditingTitle(true);
+                }}
+                title="Edit title"
+              >
+                {issue.title}
+              </button>{' '}
+              <span className="opacity-50 font-normal">#{issue.number}</span>
+            </h1>
+          )}
+          <span className={`badge ${open ? 'badge-success' : 'badge-ghost'}`}>
             {issue.state}
           </span>
         </div>
@@ -190,7 +254,12 @@ export function IssueDetailPage({ owner, name, number }: Props) {
                 <span className="opacity-50 text-xs">No assignees</span>
               ) : null}
             </div>
-            <a className="link text-xs" href={issue.url} target="_blank" rel="noreferrer">
+            <a
+              className="link text-xs"
+              href={issue.url}
+              target="_blank"
+              rel="noreferrer"
+            >
               Open on GitHub
             </a>
           </div>
@@ -219,7 +288,7 @@ export function IssueDetailPage({ owner, name, number }: Props) {
         </div>
 
         <div className="space-y-3">
-          {issue.comments?.nodes?.map((c) => {
+          {commentNodes.map((c) => {
             if (!c) return null;
             return (
               <div
@@ -252,18 +321,39 @@ export function IssueDetailPage({ owner, name, number }: Props) {
             className="btn btn-primary btn-sm"
             disabled={!body.trim() || commentInFlight}
             onClick={() => {
+              const text = body.trim();
+              const issueId = issue.id;
               commitComment({
-                variables: { id: issue.id, body: body.trim() },
-                onCompleted: () => {
-                  setBody('');
-                  toast.info('Comment added — refresh if it is not visible yet');
+                variables: { id: issueId, body: text },
+                optimisticUpdater: (store) => {
+                  const id = `client:optimisticComment:${Date.now()}`;
+                  const node = store.create(id, 'IssueComment');
+                  node.setValue(text, 'body');
+                  node.setValue(new Date().toISOString(), 'createdAt');
+                  const edge = store.create(`${id}:edge`, 'IssueCommentEdge');
+                  edge.setLinkedRecord(node, 'node');
+                  const issueRec = store.get(issueId);
+                  if (!issueRec) return;
+                  const conn = ConnectionHandler.getConnection(
+                    issueRec,
+                    'IssueDetailPage_comments',
+                  );
+                  if (conn) ConnectionHandler.insertEdgeAfter(conn, edge);
                 },
-                onError: (e) => toast.error('Comment failed', e.message),
                 updater: (store) => {
-                  // rely on refetch via store-and-network on remount; simple invalidate
-                  const rec = store.get(issue.id);
-                  rec?.invalidateRecord();
+                  const payload = store.getRootField('addComment');
+                  const edge = payload?.getLinkedRecord('commentEdge');
+                  if (!edge) return;
+                  const issueRec = store.get(issueId);
+                  if (!issueRec) return;
+                  const conn = ConnectionHandler.getConnection(
+                    issueRec,
+                    'IssueDetailPage_comments',
+                  );
+                  if (conn) ConnectionHandler.insertEdgeAfter(conn, edge);
                 },
+                onCompleted: () => setBody(''),
+                onError: (e) => toast.error('Comment failed', e.message),
               });
             }}
           >
@@ -272,7 +362,7 @@ export function IssueDetailPage({ owner, name, number }: Props) {
         </div>
       </div>
 
-      <div className="sticky bottom-0 border-t border-base-300 bg-base-100 p-2 flex gap-2 safe-area">
+      <div className="sticky bottom-0 border-t border-base-300 bg-base-100 p-2 flex gap-2">
         {open ? (
           <button
             type="button"

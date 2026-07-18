@@ -7,10 +7,11 @@
   "packageManager": "pnpm@10.12.1",
   "scripts": {
     "dev": "vite",
-    "build": "relay-compiler && tsc -b --noEmit && vite build",
+    "build": "relay-compiler && tsc --noEmit -p tsconfig.json && vite build",
     "preview": "vite preview",
     "relay": "relay-compiler",
-    "test": "vitest run"
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
     "@git-diff-view/react": "^0.0.30",

@@ -16,11 +16,10 @@ jobs:
       - uses: actions/checkout@v4
       - uses: jdx/mise-action@v2
       - run: mise run install
-      - name: Introspect schema
+      - name: Refresh schema + relay
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: mise run codegen:schema
-      - run: mise run codegen:relay
+        run: mise run schema-refresh
       - name: Open PR if dirty
         uses: peter-evans/create-pull-request@v7
         with:

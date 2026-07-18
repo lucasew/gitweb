@@ -4,21 +4,46 @@ import {
   createRoute,
   createRouter,
 } from '@tanstack/react-router';
-import { Suspense, useState, type ReactNode } from 'react';
+import { Suspense, lazy, useState, type ReactNode } from 'react';
 import { SimpleErrorBoundary } from '@/components/SimpleErrorBoundary';
 import { TopBar } from '@/components/TopBar';
 import { RepoSideNav } from '@/components/RepoSideNav';
 import { CommandPalette } from '@/components/CommandPalette';
 import { LoadingBlock } from '@/components/LoadingBlock';
-import { HomePage } from '@/screens/HomePage';
-import { RepoPage } from '@/screens/RepoPage';
-import { CodeBrowserPage } from '@/screens/CodeBrowserPage';
-import { IssuesListPage } from '@/screens/IssuesListPage';
-import { IssueDetailPage } from '@/screens/IssueDetailPage';
-import { PullsListPage } from '@/screens/PullsListPage';
-import { PullDetailPage } from '@/screens/PullDetailPage';
-import { SearchPage } from '@/screens/SearchPage';
 import { graphql, useLazyLoadQuery } from 'react-relay';
+
+const HomePage = lazy(() =>
+  import('@/screens/HomePage').then((m) => ({ default: m.HomePage })),
+);
+const RepoPage = lazy(() =>
+  import('@/screens/RepoPage').then((m) => ({ default: m.RepoPage })),
+);
+const CodeBrowserPage = lazy(() =>
+  import('@/screens/CodeBrowserPage').then((m) => ({
+    default: m.CodeBrowserPage,
+  })),
+);
+const IssuesListPage = lazy(() =>
+  import('@/screens/IssuesListPage').then((m) => ({
+    default: m.IssuesListPage,
+  })),
+);
+const IssueDetailPage = lazy(() =>
+  import('@/screens/IssueDetailPage').then((m) => ({
+    default: m.IssueDetailPage,
+  })),
+);
+const PullsListPage = lazy(() =>
+  import('@/screens/PullsListPage').then((m) => ({ default: m.PullsListPage })),
+);
+const PullDetailPage = lazy(() =>
+  import('@/screens/PullDetailPage').then((m) => ({
+    default: m.PullDetailPage,
+  })),
+);
+const SearchPage = lazy(() =>
+  import('@/screens/SearchPage').then((m) => ({ default: m.SearchPage })),
+);
 import type { routerViewerQuery } from './__generated__/routerViewerQuery.graphql';
 
 const viewerQuery = graphql`
