@@ -103,7 +103,7 @@ export const jumpSectionProvider: GotoProvider = (q, ctx) => {
 export const reposProvider: GotoProvider = (q, ctx) => {
   const slash = parseSlashCommand(q);
   if (slash) return [];
-  if (ctx.code && isPathExpression(q, { inCode: true })) return [];
+  if (ctx.pathNav && isPathExpression(q, { inCode: true })) return [];
 
   const out: GotoCandidate[] = [];
   const repos = filterRepos(ctx.recent, ctx.repo, q);
@@ -127,7 +127,7 @@ export const reposProvider: GotoProvider = (q, ctx) => {
     !q.startsWith('/') &&
     !q.startsWith('.') &&
     !q.includes('..') &&
-    !isPathExpression(q, { inCode: Boolean(ctx.code) })
+    !isPathExpression(q, { inCode: Boolean(ctx.pathNav) })
   ) {
     const bare = q.replace(/^\/+/, '');
     out.push({
@@ -182,7 +182,7 @@ export const searchProvider: GotoProvider = (q, ctx) => {
   const searchQ =
     slash?.cmd === 'search' ? slash.rest : !slash ? q : '';
   if (!searchQ.trim()) return [];
-  if (ctx.code && isPathExpression(q, { inCode: true }) && !slash) {
+  if (ctx.pathNav && isPathExpression(q, { inCode: true }) && !slash) {
     return [];
   }
   const term = searchQ.trim();

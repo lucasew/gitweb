@@ -7,26 +7,30 @@ import { parseSlashCommand } from './slash';
 import type { GotoProvider } from './types';
 
 /**
- * Path provider for ⌘K: type a path, get a destination suggestion, select → go.
+ * Path provider for ⌘K: type a path → suggest destination → select opens it.
  *
- * Active on blob/tree. Resolves relative to the current file/folder
- * (`..` from a file = containing directory; from DESIGN.md → `/`).
+ * Active whenever we have a pathNav anchor:
+ * - blob/tree: relative to current file/folder
+ * - repo home / issues / PRs: relative to repository root (ref HEAD)
  */
 export const pathProvider: GotoProvider = (q, ctx) => {
-  if (!ctx.code) return [];
+  const anchor = ctx.pathNav;
+  if (!anchor) return [];
+
   const query = q.trim();
   if (!query) return [];
   if (parseSlashCommand(query)) return [];
   if (!isPathExpression(query, { inCode: true })) return [];
 
   const resolved = resolveFromCodeLocation(
-    { mode: ctx.code.mode, path: ctx.code.path },
+    { mode: anchor.mode, path: anchor.path },
     query,
   );
   if (resolved == null) return [];
 
+  // Staying at root for `..` from root is a no-op suggestion — still ok
   const display = formatRepoPath(resolved);
-  const { owner, name, refName } = ctx.code;
+  const { owner, name, refName } = anchor;
 
   return [
     {

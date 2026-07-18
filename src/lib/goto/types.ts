@@ -1,20 +1,28 @@
 import type { RecentRepo } from '@/lib/recentRepos';
 
+/** Anchor for path expressions (blob/tree, or synthetic repo root). */
+export type PathNavAnchor = {
+  owner: string;
+  name: string;
+  refName: string;
+  mode: 'blob' | 'tree';
+  /** Repo-relative path ('' at tree/repo root). */
+  path: string;
+  /** Directory used for non-climb relative paths. */
+  cwd: string;
+};
+
 /** Where the user is when opening ⌘K. */
 export type GotoContext = {
   pathname: string;
   repo: { owner: string; name: string } | null;
-  /** Present on blob/tree routes. */
-  code: {
-    owner: string;
-    name: string;
-    refName: string;
-    mode: 'blob' | 'tree';
-    /** Repo-relative path ('' at tree root). */
-    path: string;
-    /** Directory used to resolve relative path expressions. */
-    cwd: string;
-  } | null;
+  /** Present on real blob/tree routes only. */
+  code: PathNavAnchor | null;
+  /**
+   * Path provider anchor: real code location, or repo root at HEAD when on
+   * any repo page (home, issues, …) so paths work from `/owner/repo`.
+   */
+  pathNav: PathNavAnchor | null;
   recent: RecentRepo[];
 };
 

@@ -3,13 +3,19 @@ import { collectGotoCandidates } from '../collect';
 import type { GotoContext } from '../types';
 
 function ctx(partial: Partial<GotoContext> = {}): GotoContext {
-  return {
+  const base: GotoContext = {
     pathname: '/',
     repo: null,
     code: null,
+    pathNav: null,
     recent: [],
     ...partial,
   };
+  // default pathNav from code if caller only set code
+  if (partial.code && partial.pathNav === undefined) {
+    base.pathNav = partial.code;
+  }
+  return base;
 }
 
 const codeAtDesign = ctx({
@@ -81,6 +87,36 @@ describe('path provider via collect', () => {
       }),
     );
     expect(items.find((i) => i.group === 'Path')?.label).toBe('src');
+  });
+});
+
+describe('path from repo home', () => {
+  it('suggests folder from /owner/repo root (HEAD)', () => {
+    const items = collectGotoCandidates(
+      'src',
+      ctx({
+        pathname: '/lewtec/contapila',
+        repo: { owner: 'lewtec', name: 'contapila' },
+        code: null,
+        pathNav: {
+          owner: 'lewtec',
+          name: 'contapila',
+          refName: 'HEAD',
+          mode: 'tree',
+          path: '',
+          cwd: '',
+        },
+      }),
+    );
+    const path = items.find((i) => i.group === 'Path');
+    expect(path?.label).toBe('src');
+    expect(path?.action).toEqual({
+      kind: 'open-repo-path',
+      owner: 'lewtec',
+      name: 'contapila',
+      ref: 'HEAD',
+      path: 'src',
+    });
   });
 });
 

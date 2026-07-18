@@ -99,8 +99,8 @@ export function CommandPalette({ open, onOpenChange }: Props) {
             value={q}
             onValueChange={setQ}
             placeholder={
-              ctx.code
-                ? 'Path: ..  src/  ../lib  ·  /code /issues  ·  owner/repo'
+              ctx.pathNav
+                ? 'Path: src  ../lib  ·  /code /issues  ·  owner/repo'
                 : '/code /issues /prs  ·  owner/repo  ·  search…'
             }
             className="input input-bordered w-full rounded-none border-0 border-b border-base-300 focus:outline-none"
