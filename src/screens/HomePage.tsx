@@ -112,16 +112,16 @@ export function HomePage() {
           <div className="card bg-base-100 border border-base-300">
             <div className="card-body p-3 gap-1">
               <h3 className="font-medium text-sm">
-                Review requests ({data.reviewRequests.issueCount})
+                Assigned issues ({data.assignedIssues.issueCount})
               </h3>
               <ul className="divide-y divide-base-300">
-                {data.reviewRequests.nodes?.filter(Boolean).length ? (
-                  data.reviewRequests.nodes.map((n) => {
+                {data.assignedIssues.nodes?.filter(Boolean).length ? (
+                  data.assignedIssues.nodes.map((n) => {
                     if (!n || !('number' in n) || !n.repository) return null;
                     return (
                       <li key={n.id} className="dense-row">
                         <Link
-                          to="/$owner/$name/pull/$number"
+                          to="/$owner/$name/issues/$number"
                           params={{
                             owner: n.repository.owner.login,
                             name: n.repository.name,
@@ -146,16 +146,16 @@ export function HomePage() {
           <div className="card bg-base-100 border border-base-300">
             <div className="card-body p-3 gap-1">
               <h3 className="font-medium text-sm">
-                Assigned issues ({data.assignedIssues.issueCount})
+                Review requests ({data.reviewRequests.issueCount})
               </h3>
               <ul className="divide-y divide-base-300">
-                {data.assignedIssues.nodes?.filter(Boolean).length ? (
-                  data.assignedIssues.nodes.map((n) => {
+                {data.reviewRequests.nodes?.filter(Boolean).length ? (
+                  data.reviewRequests.nodes.map((n) => {
                     if (!n || !('number' in n) || !n.repository) return null;
                     return (
                       <li key={n.id} className="dense-row">
                         <Link
-                          to="/$owner/$name/issues/$number"
+                          to="/$owner/$name/pull/$number"
                           params={{
                             owner: n.repository.owner.login,
                             name: n.repository.name,
