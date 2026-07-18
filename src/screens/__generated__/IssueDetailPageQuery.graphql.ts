@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<533945e61834cc411944bc7dcd9b815a>>
+ * @generated SignedSource<<4d4673d2be765a3f7c8249876cc18d82>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -29,6 +29,7 @@ export type IssueDetailPageQuery$data = {
       readonly author: {
         readonly avatarUrl: any;
         readonly login: string;
+        readonly name?: string | null | undefined;
       } | null | undefined;
       readonly body: string;
       readonly closedAt: any | null | undefined;
@@ -38,6 +39,7 @@ export type IssueDetailPageQuery$data = {
             readonly author: {
               readonly avatarUrl: any;
               readonly login: string;
+              readonly name?: string | null | undefined;
             } | null | undefined;
             readonly body: string;
             readonly createdAt: any;
@@ -182,25 +184,33 @@ v15 = {
 },
 v16 = {
   "alias": null,
-  "args": null,
+  "args": [
+    {
+      "kind": "Literal",
+      "name": "size",
+      "value": 64
+    }
+  ],
   "kind": "ScalarField",
   "name": "avatarUrl",
-  "storageKey": null
+  "storageKey": "avatarUrl(size:64)"
 },
 v17 = {
   "alias": null,
   "args": null,
-  "concreteType": null,
-  "kind": "LinkedField",
-  "name": "author",
-  "plural": false,
-  "selections": [
-    (v15/*: any*/),
-    (v16/*: any*/)
-  ],
+  "kind": "ScalarField",
+  "name": "name",
   "storageKey": null
 },
 v18 = {
+  "kind": "InlineFragment",
+  "selections": [
+    (v17/*: any*/)
+  ],
+  "type": "User",
+  "abstractKey": null
+},
+v19 = {
   "alias": null,
   "args": [
     {
@@ -223,13 +233,7 @@ v18 = {
       "plural": true,
       "selections": [
         (v5/*: any*/),
-        {
-          "alias": null,
-          "args": null,
-          "kind": "ScalarField",
-          "name": "name",
-          "storageKey": null
-        },
+        (v17/*: any*/),
         {
           "alias": null,
           "args": null,
@@ -243,7 +247,7 @@ v18 = {
   ],
   "storageKey": "labels(first:20)"
 },
-v19 = {
+v20 = {
   "alias": null,
   "args": [
     {
@@ -267,28 +271,47 @@ v19 = {
       "selections": [
         (v5/*: any*/),
         (v15/*: any*/),
-        (v16/*: any*/)
+        {
+          "alias": null,
+          "args": null,
+          "kind": "ScalarField",
+          "name": "avatarUrl",
+          "storageKey": null
+        }
       ],
       "storageKey": null
     }
   ],
   "storageKey": "assignees(first:10)"
 },
-v20 = {
+v21 = {
+  "alias": null,
+  "args": [
+    {
+      "kind": "Literal",
+      "name": "size",
+      "value": 40
+    }
+  ],
+  "kind": "ScalarField",
+  "name": "avatarUrl",
+  "storageKey": "avatarUrl(size:40)"
+},
+v22 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
   "name": "__typename",
   "storageKey": null
 },
-v21 = {
+v23 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
   "name": "cursor",
   "storageKey": null
 },
-v22 = {
+v24 = {
   "alias": null,
   "args": null,
   "concreteType": "PageInfo",
@@ -313,29 +336,15 @@ v22 = {
   ],
   "storageKey": null
 },
-v23 = {
-  "alias": null,
-  "args": null,
-  "concreteType": null,
-  "kind": "LinkedField",
-  "name": "author",
-  "plural": false,
+v25 = {
+  "kind": "InlineFragment",
   "selections": [
-    (v20/*: any*/),
-    (v15/*: any*/),
-    (v16/*: any*/),
-    {
-      "kind": "InlineFragment",
-      "selections": [
-        (v5/*: any*/)
-      ],
-      "type": "Node",
-      "abstractKey": "__isNode"
-    }
+    (v5/*: any*/)
   ],
-  "storageKey": null
+  "type": "Node",
+  "abstractKey": "__isNode"
 },
-v24 = [
+v26 = [
   {
     "kind": "Literal",
     "name": "first",
@@ -379,9 +388,22 @@ return {
               (v12/*: any*/),
               (v13/*: any*/),
               (v14/*: any*/),
-              (v17/*: any*/),
-              (v18/*: any*/),
+              {
+                "alias": null,
+                "args": null,
+                "concreteType": null,
+                "kind": "LinkedField",
+                "name": "author",
+                "plural": false,
+                "selections": [
+                  (v15/*: any*/),
+                  (v16/*: any*/),
+                  (v18/*: any*/)
+                ],
+                "storageKey": null
+              },
               (v19/*: any*/),
+              (v20/*: any*/),
               {
                 "alias": "comments",
                 "args": null,
@@ -409,16 +431,29 @@ return {
                           (v5/*: any*/),
                           (v8/*: any*/),
                           (v11/*: any*/),
-                          (v17/*: any*/),
-                          (v20/*: any*/)
+                          {
+                            "alias": null,
+                            "args": null,
+                            "concreteType": null,
+                            "kind": "LinkedField",
+                            "name": "author",
+                            "plural": false,
+                            "selections": [
+                              (v15/*: any*/),
+                              (v21/*: any*/),
+                              (v18/*: any*/)
+                            ],
+                            "storageKey": null
+                          },
+                          (v22/*: any*/)
                         ],
                         "storageKey": null
                       },
-                      (v21/*: any*/)
+                      (v23/*: any*/)
                     ],
                     "storageKey": null
                   },
-                  (v22/*: any*/)
+                  (v24/*: any*/)
                 ],
                 "storageKey": null
               }
@@ -468,12 +503,27 @@ return {
               (v12/*: any*/),
               (v13/*: any*/),
               (v14/*: any*/),
-              (v23/*: any*/),
-              (v18/*: any*/),
-              (v19/*: any*/),
               {
                 "alias": null,
-                "args": (v24/*: any*/),
+                "args": null,
+                "concreteType": null,
+                "kind": "LinkedField",
+                "name": "author",
+                "plural": false,
+                "selections": [
+                  (v22/*: any*/),
+                  (v15/*: any*/),
+                  (v16/*: any*/),
+                  (v18/*: any*/),
+                  (v25/*: any*/)
+                ],
+                "storageKey": null
+              },
+              (v19/*: any*/),
+              (v20/*: any*/),
+              {
+                "alias": null,
+                "args": (v26/*: any*/),
                 "concreteType": "IssueCommentConnection",
                 "kind": "LinkedField",
                 "name": "comments",
@@ -498,22 +548,37 @@ return {
                           (v5/*: any*/),
                           (v8/*: any*/),
                           (v11/*: any*/),
-                          (v23/*: any*/),
-                          (v20/*: any*/)
+                          {
+                            "alias": null,
+                            "args": null,
+                            "concreteType": null,
+                            "kind": "LinkedField",
+                            "name": "author",
+                            "plural": false,
+                            "selections": [
+                              (v22/*: any*/),
+                              (v15/*: any*/),
+                              (v21/*: any*/),
+                              (v18/*: any*/),
+                              (v25/*: any*/)
+                            ],
+                            "storageKey": null
+                          },
+                          (v22/*: any*/)
                         ],
                         "storageKey": null
                       },
-                      (v21/*: any*/)
+                      (v23/*: any*/)
                     ],
                     "storageKey": null
                   },
-                  (v22/*: any*/)
+                  (v24/*: any*/)
                 ],
                 "storageKey": "comments(first:50)"
               },
               {
                 "alias": null,
-                "args": (v24/*: any*/),
+                "args": (v26/*: any*/),
                 "filters": null,
                 "handle": "connection",
                 "key": "IssueDetailPage_comments",
@@ -530,7 +595,7 @@ return {
     ]
   },
   "params": {
-    "cacheID": "40dfff32ff1a93865fc70df242f1e738",
+    "cacheID": "50a574d13571018edfefa921e7a1df42",
     "id": null,
     "metadata": {
       "connection": [
@@ -548,11 +613,11 @@ return {
     },
     "name": "IssueDetailPageQuery",
     "operationKind": "query",
-    "text": "query IssueDetailPageQuery(\n  $owner: String!\n  $name: String!\n  $number: Int!\n) {\n  repository(owner: $owner, name: $name) {\n    issue(number: $number) {\n      id\n      number\n      title\n      body\n      state\n      stateReason\n      createdAt\n      updatedAt\n      closedAt\n      url\n      author {\n        __typename\n        login\n        avatarUrl\n        ... on Node {\n          __isNode: __typename\n          id\n        }\n      }\n      labels(first: 20) {\n        nodes {\n          id\n          name\n          color\n        }\n      }\n      assignees(first: 10) {\n        nodes {\n          id\n          login\n          avatarUrl\n        }\n      }\n      comments(first: 50) {\n        edges {\n          node {\n            id\n            body\n            createdAt\n            author {\n              __typename\n              login\n              avatarUrl\n              ... on Node {\n                __isNode: __typename\n                id\n              }\n            }\n            __typename\n          }\n          cursor\n        }\n        pageInfo {\n          endCursor\n          hasNextPage\n        }\n      }\n    }\n    id\n  }\n}\n"
+    "text": "query IssueDetailPageQuery(\n  $owner: String!\n  $name: String!\n  $number: Int!\n) {\n  repository(owner: $owner, name: $name) {\n    issue(number: $number) {\n      id\n      number\n      title\n      body\n      state\n      stateReason\n      createdAt\n      updatedAt\n      closedAt\n      url\n      author {\n        __typename\n        login\n        avatarUrl(size: 64)\n        ... on User {\n          name\n        }\n        ... on Node {\n          __isNode: __typename\n          id\n        }\n      }\n      labels(first: 20) {\n        nodes {\n          id\n          name\n          color\n        }\n      }\n      assignees(first: 10) {\n        nodes {\n          id\n          login\n          avatarUrl\n        }\n      }\n      comments(first: 50) {\n        edges {\n          node {\n            id\n            body\n            createdAt\n            author {\n              __typename\n              login\n              avatarUrl(size: 40)\n              ... on User {\n                name\n              }\n              ... on Node {\n                __isNode: __typename\n                id\n              }\n            }\n            __typename\n          }\n          cursor\n        }\n        pageInfo {\n          endCursor\n          hasNextPage\n        }\n      }\n    }\n    id\n  }\n}\n"
   }
 };
 })();
 
-(node as any).hash = "8a668d24d94c605c186a3c14dcc9336e";
+(node as any).hash = "8366eece8b4c3077d036cf450273f228";
 
 export default node;

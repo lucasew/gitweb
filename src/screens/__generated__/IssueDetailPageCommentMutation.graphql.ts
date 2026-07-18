@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<8f5c744569a9440b5070d9982567ec1d>>
+ * @generated SignedSource<<ea2f9db91d73ce3fc42d662b706b4c87>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -21,6 +21,7 @@ export type IssueDetailPageCommentMutation$data = {
         readonly author: {
           readonly avatarUrl: any;
           readonly login: string;
+          readonly name?: string | null | undefined;
         } | null | undefined;
         readonly body: string;
         readonly createdAt: any;
@@ -100,10 +101,30 @@ v7 = {
 },
 v8 = {
   "alias": null,
-  "args": null,
+  "args": [
+    {
+      "kind": "Literal",
+      "name": "size",
+      "value": 40
+    }
+  ],
   "kind": "ScalarField",
   "name": "avatarUrl",
-  "storageKey": null
+  "storageKey": "avatarUrl(size:40)"
+},
+v9 = {
+  "kind": "InlineFragment",
+  "selections": [
+    {
+      "alias": null,
+      "args": null,
+      "kind": "ScalarField",
+      "name": "name",
+      "storageKey": null
+    }
+  ],
+  "type": "User",
+  "abstractKey": null
 };
 return {
   "fragment": {
@@ -152,7 +173,8 @@ return {
                     "plural": false,
                     "selections": [
                       (v7/*: any*/),
-                      (v8/*: any*/)
+                      (v8/*: any*/),
+                      (v9/*: any*/)
                     ],
                     "storageKey": null
                   }
@@ -223,6 +245,7 @@ return {
                       },
                       (v7/*: any*/),
                       (v8/*: any*/),
+                      (v9/*: any*/),
                       {
                         "kind": "InlineFragment",
                         "selections": [
@@ -246,16 +269,16 @@ return {
     ]
   },
   "params": {
-    "cacheID": "551cac426e227143d59f212aaa6caeaa",
+    "cacheID": "c35c08467b6ee2a06139428ab70cd136",
     "id": null,
     "metadata": {},
     "name": "IssueDetailPageCommentMutation",
     "operationKind": "mutation",
-    "text": "mutation IssueDetailPageCommentMutation(\n  $id: ID!\n  $body: String!\n) {\n  addComment(input: {subjectId: $id, body: $body}) {\n    commentEdge {\n      cursor\n      node {\n        id\n        body\n        createdAt\n        author {\n          __typename\n          login\n          avatarUrl\n          ... on Node {\n            __isNode: __typename\n            id\n          }\n        }\n      }\n    }\n  }\n}\n"
+    "text": "mutation IssueDetailPageCommentMutation(\n  $id: ID!\n  $body: String!\n) {\n  addComment(input: {subjectId: $id, body: $body}) {\n    commentEdge {\n      cursor\n      node {\n        id\n        body\n        createdAt\n        author {\n          __typename\n          login\n          avatarUrl(size: 40)\n          ... on User {\n            name\n          }\n          ... on Node {\n            __isNode: __typename\n            id\n          }\n        }\n      }\n    }\n  }\n}\n"
   }
 };
 })();
 
-(node as any).hash = "424d2ac4dabb1a7046b98c2954d172c8";
+(node as any).hash = "3ca1d1954de6ca6c00aa32c550936a1e";
 
 export default node;

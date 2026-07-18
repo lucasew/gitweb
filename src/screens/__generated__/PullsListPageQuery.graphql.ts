@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<849a7a4faa3a839b0ef7b3bd57cb92cd>>
+ * @generated SignedSource<<d5c111f13c91475ad6430258c714bada>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -18,7 +18,9 @@ export type PullsListPageQuery$data = {
     readonly pullRequests: {
       readonly nodes: ReadonlyArray<{
         readonly author: {
+          readonly avatarUrl: any;
           readonly login: string;
+          readonly name?: string | null | undefined;
         } | null | undefined;
         readonly id: string;
         readonly isDraft: boolean;
@@ -114,6 +116,33 @@ v8 = {
 },
 v9 = {
   "alias": null,
+  "args": [
+    {
+      "kind": "Literal",
+      "name": "size",
+      "value": 40
+    }
+  ],
+  "kind": "ScalarField",
+  "name": "avatarUrl",
+  "storageKey": "avatarUrl(size:40)"
+},
+v10 = {
+  "kind": "InlineFragment",
+  "selections": [
+    {
+      "alias": null,
+      "args": null,
+      "kind": "ScalarField",
+      "name": "name",
+      "storageKey": null
+    }
+  ],
+  "type": "User",
+  "abstractKey": null
+},
+v11 = {
+  "alias": null,
   "args": null,
   "kind": "ScalarField",
   "name": "isDraft",
@@ -165,11 +194,13 @@ return {
                     "name": "author",
                     "plural": false,
                     "selections": [
-                      (v8/*: any*/)
+                      (v8/*: any*/),
+                      (v9/*: any*/),
+                      (v10/*: any*/)
                     ],
                     "storageKey": null
                   },
-                  (v9/*: any*/)
+                  (v11/*: any*/)
                 ],
                 "storageKey": null
               }
@@ -236,6 +267,8 @@ return {
                         "storageKey": null
                       },
                       (v8/*: any*/),
+                      (v9/*: any*/),
+                      (v10/*: any*/),
                       {
                         "kind": "InlineFragment",
                         "selections": [
@@ -247,7 +280,7 @@ return {
                     ],
                     "storageKey": null
                   },
-                  (v9/*: any*/)
+                  (v11/*: any*/)
                 ],
                 "storageKey": null
               }
@@ -261,16 +294,16 @@ return {
     ]
   },
   "params": {
-    "cacheID": "f36d1de657499a71395c7f549fa793d6",
+    "cacheID": "33246dbde9b81c2090a2128450fff8bc",
     "id": null,
     "metadata": {},
     "name": "PullsListPageQuery",
     "operationKind": "query",
-    "text": "query PullsListPageQuery(\n  $owner: String!\n  $name: String!\n) {\n  repository(owner: $owner, name: $name) {\n    pullRequests(first: 40, states: OPEN, orderBy: {field: UPDATED_AT, direction: DESC}) {\n      nodes {\n        id\n        number\n        title\n        updatedAt\n        author {\n          __typename\n          login\n          ... on Node {\n            __isNode: __typename\n            id\n          }\n        }\n        isDraft\n      }\n    }\n    id\n  }\n}\n"
+    "text": "query PullsListPageQuery(\n  $owner: String!\n  $name: String!\n) {\n  repository(owner: $owner, name: $name) {\n    pullRequests(first: 40, states: OPEN, orderBy: {field: UPDATED_AT, direction: DESC}) {\n      nodes {\n        id\n        number\n        title\n        updatedAt\n        author {\n          __typename\n          login\n          avatarUrl(size: 40)\n          ... on User {\n            name\n          }\n          ... on Node {\n            __isNode: __typename\n            id\n          }\n        }\n        isDraft\n      }\n    }\n    id\n  }\n}\n"
   }
 };
 })();
 
-(node as any).hash = "1df8499e3ac4c40e9719f20141a3d4fc";
+(node as any).hash = "3d0b6a61a872f457779a9480218b6f83";
 
 export default node;

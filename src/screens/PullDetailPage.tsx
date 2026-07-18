@@ -16,6 +16,7 @@ import { useToast } from '@/lib/toast';
 import { useLiveQuery } from '@/lib/useLiveQuery';
 import { LoadingBlock } from '@/components/LoadingBlock';
 import { ExternalLink } from '@/components/ExternalLink';
+import { AuthorByline } from '@/components/AuthorByline';
 
 const PullFilesDiff = lazy(() =>
   import('@/components/PullFilesDiff').then((m) => ({
@@ -43,6 +44,10 @@ const query = graphql`
         createdAt
         author {
           login
+          avatarUrl(size: 64)
+          ... on User {
+            name
+          }
         }
         baseRefName
         headRefName
@@ -52,6 +57,10 @@ const query = graphql`
             state
             author {
               login
+              avatarUrl(size: 40)
+              ... on User {
+                name
+              }
             }
             body
             createdAt
@@ -64,6 +73,10 @@ const query = graphql`
             createdAt
             author {
               login
+              avatarUrl(size: 40)
+              ... on User {
+                name
+              }
             }
           }
         }
@@ -295,9 +308,23 @@ export function PullDetailPage({ owner, name, number }: Props) {
         ) : (
           <>
             <div className="border border-base-300 rounded-box p-3">
-              <div className="text-xs opacity-60 mb-2">
-                @{pr.author?.login ?? 'ghost'} ·{' '}
-                {new Date(pr.createdAt).toLocaleString()}
+              <div className="mb-2">
+                <AuthorByline
+                  size="md"
+                  author={
+                    pr.author
+                      ? {
+                          login: pr.author.login,
+                          avatarUrl: pr.author.avatarUrl,
+                          name:
+                            pr.author && 'name' in pr.author
+                              ? (pr.author as { name?: string | null }).name
+                              : null,
+                        }
+                      : null
+                  }
+                  meta={new Date(pr.createdAt).toLocaleString()}
+                />
               </div>
               <div className="prose prose-sm max-w-none">
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
@@ -311,8 +338,22 @@ export function PullDetailPage({ owner, name, number }: Props) {
               <ul className="space-y-1 mb-3">
                 {pr.reviews?.nodes?.map((r) =>
                   r ? (
-                    <li key={r.id} className="text-xs border border-base-300 rounded p-2">
-                      @{r.author?.login}: <strong>{r.state}</strong>
+                    <li key={r.id} className="text-xs border border-base-300 rounded p-2 space-y-1">
+                      <AuthorByline
+                        author={
+                          r.author
+                            ? {
+                                login: r.author.login,
+                                avatarUrl: r.author.avatarUrl,
+                                name:
+                                  r.author && 'name' in r.author
+                                    ? (r.author as { name?: string | null }).name
+                                    : null,
+                              }
+                            : null
+                        }
+                        meta={r.state}
+                      />
                       {r.body ? (
                         <div className="prose prose-sm max-w-none mt-1">
                           <ReactMarkdown remarkPlugins={[remarkGfm]}>
@@ -333,9 +374,22 @@ export function PullDetailPage({ owner, name, number }: Props) {
                   key={c.id}
                   className="border border-base-300 rounded-box p-3"
                 >
-                  <div className="text-xs opacity-60 mb-2">
-                    @{c.author?.login ?? 'ghost'} ·{' '}
-                    {new Date(c.createdAt).toLocaleString()}
+                  <div className="mb-2">
+                    <AuthorByline
+                      author={
+                        c.author
+                          ? {
+                              login: c.author.login,
+                              avatarUrl: c.author.avatarUrl,
+                              name:
+                                c.author && 'name' in c.author
+                                  ? (c.author as { name?: string | null }).name
+                                  : null,
+                            }
+                          : null
+                      }
+                      meta={new Date(c.createdAt).toLocaleString()}
+                    />
                   </div>
                   <div className="prose prose-sm max-w-none">
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>

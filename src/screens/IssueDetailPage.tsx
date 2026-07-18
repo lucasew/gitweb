@@ -11,6 +11,7 @@ import type { IssueDetailPageTitleMutation } from './__generated__/IssueDetailPa
 import { useToast } from '@/lib/toast';
 import { useLiveQuery } from '@/lib/useLiveQuery';
 import { ExternalLink } from '@/components/ExternalLink';
+import { AuthorByline } from '@/components/AuthorByline';
 
 const query = graphql`
   query IssueDetailPageQuery($owner: String!, $name: String!, $number: Int!) {
@@ -28,7 +29,10 @@ const query = graphql`
         url
         author {
           login
-          avatarUrl
+          avatarUrl(size: 64)
+          ... on User {
+            name
+          }
         }
         labels(first: 20) {
           nodes {
@@ -53,7 +57,10 @@ const query = graphql`
               createdAt
               author {
                 login
-                avatarUrl
+                avatarUrl(size: 40)
+                ... on User {
+                  name
+                }
               }
             }
           }
@@ -100,7 +107,10 @@ const commentMutation = graphql`
           createdAt
           author {
             login
-            avatarUrl
+            avatarUrl(size: 40)
+            ... on User {
+              name
+            }
           }
         }
       }
@@ -270,9 +280,23 @@ export function IssueDetailPage({ owner, name, number }: Props) {
         )}
 
         <div className="border border-base-300 rounded-box p-3">
-          <div className="text-xs opacity-60 mb-2">
-            @{issue.author?.login ?? 'ghost'} ·{' '}
-            {new Date(issue.createdAt).toLocaleString()}
+          <div className="mb-2">
+            <AuthorByline
+              size="md"
+              author={
+                issue.author
+                  ? {
+                      login: issue.author.login,
+                      avatarUrl: issue.author.avatarUrl,
+                      name:
+                        issue.author && 'name' in issue.author
+                          ? (issue.author as { name?: string | null }).name
+                          : null,
+                    }
+                  : null
+              }
+              meta={new Date(issue.createdAt).toLocaleString()}
+            />
           </div>
           <div className="prose prose-sm max-w-none">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>
@@ -289,9 +313,22 @@ export function IssueDetailPage({ owner, name, number }: Props) {
                 key={c.id}
                 className="border border-base-300 rounded-box p-3"
               >
-                <div className="text-xs opacity-60 mb-2">
-                  @{c.author?.login ?? 'ghost'} ·{' '}
-                  {new Date(c.createdAt).toLocaleString()}
+                <div className="mb-2">
+                  <AuthorByline
+                    author={
+                      c.author
+                        ? {
+                            login: c.author.login,
+                            avatarUrl: c.author.avatarUrl,
+                            name:
+                              c.author && 'name' in c.author
+                                ? (c.author as { name?: string | null }).name
+                                : null,
+                          }
+                        : null
+                    }
+                    meta={new Date(c.createdAt).toLocaleString()}
+                  />
                 </div>
                 <div className="prose prose-sm max-w-none">
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>

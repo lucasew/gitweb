@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<0c58c017a43330cd37930e028b96957b>>
+ * @generated SignedSource<<39bb77fbdd70ebf6aba1f6cf6dae32d5>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -18,7 +18,9 @@ export type IssuesListPageQuery$data = {
     readonly issues: {
       readonly nodes: ReadonlyArray<{
         readonly author: {
+          readonly avatarUrl: any;
           readonly login: string;
+          readonly name?: string | null | undefined;
         } | null | undefined;
         readonly id: string;
         readonly labels: {
@@ -123,6 +125,34 @@ v9 = {
   "args": [
     {
       "kind": "Literal",
+      "name": "size",
+      "value": 40
+    }
+  ],
+  "kind": "ScalarField",
+  "name": "avatarUrl",
+  "storageKey": "avatarUrl(size:40)"
+},
+v10 = {
+  "alias": null,
+  "args": null,
+  "kind": "ScalarField",
+  "name": "name",
+  "storageKey": null
+},
+v11 = {
+  "kind": "InlineFragment",
+  "selections": [
+    (v10/*: any*/)
+  ],
+  "type": "User",
+  "abstractKey": null
+},
+v12 = {
+  "alias": null,
+  "args": [
+    {
+      "kind": "Literal",
       "name": "first",
       "value": 5
     }
@@ -141,13 +171,7 @@ v9 = {
       "plural": true,
       "selections": [
         (v4/*: any*/),
-        {
-          "alias": null,
-          "args": null,
-          "kind": "ScalarField",
-          "name": "name",
-          "storageKey": null
-        },
+        (v10/*: any*/),
         {
           "alias": null,
           "args": null,
@@ -207,11 +231,13 @@ return {
                     "name": "author",
                     "plural": false,
                     "selections": [
-                      (v8/*: any*/)
+                      (v8/*: any*/),
+                      (v9/*: any*/),
+                      (v11/*: any*/)
                     ],
                     "storageKey": null
                   },
-                  (v9/*: any*/)
+                  (v12/*: any*/)
                 ],
                 "storageKey": null
               }
@@ -278,6 +304,8 @@ return {
                         "storageKey": null
                       },
                       (v8/*: any*/),
+                      (v9/*: any*/),
+                      (v11/*: any*/),
                       {
                         "kind": "InlineFragment",
                         "selections": [
@@ -289,7 +317,7 @@ return {
                     ],
                     "storageKey": null
                   },
-                  (v9/*: any*/)
+                  (v12/*: any*/)
                 ],
                 "storageKey": null
               }
@@ -303,16 +331,16 @@ return {
     ]
   },
   "params": {
-    "cacheID": "efb5b13305134e282b41154f3ed0aa7f",
+    "cacheID": "6596876a0c63d3dd84d0794f40c0a4eb",
     "id": null,
     "metadata": {},
     "name": "IssuesListPageQuery",
     "operationKind": "query",
-    "text": "query IssuesListPageQuery(\n  $owner: String!\n  $name: String!\n) {\n  repository(owner: $owner, name: $name) {\n    issues(first: 40, states: OPEN, orderBy: {field: UPDATED_AT, direction: DESC}) {\n      nodes {\n        id\n        number\n        title\n        updatedAt\n        author {\n          __typename\n          login\n          ... on Node {\n            __isNode: __typename\n            id\n          }\n        }\n        labels(first: 5) {\n          nodes {\n            id\n            name\n            color\n          }\n        }\n      }\n    }\n    id\n  }\n}\n"
+    "text": "query IssuesListPageQuery(\n  $owner: String!\n  $name: String!\n) {\n  repository(owner: $owner, name: $name) {\n    issues(first: 40, states: OPEN, orderBy: {field: UPDATED_AT, direction: DESC}) {\n      nodes {\n        id\n        number\n        title\n        updatedAt\n        author {\n          __typename\n          login\n          avatarUrl(size: 40)\n          ... on User {\n            name\n          }\n          ... on Node {\n            __isNode: __typename\n            id\n          }\n        }\n        labels(first: 5) {\n          nodes {\n            id\n            name\n            color\n          }\n        }\n      }\n    }\n    id\n  }\n}\n"
   }
 };
 })();
 
-(node as any).hash = "88a2fa64dab05f0169f172626f4622fb";
+(node as any).hash = "eb3e7c0b9cf9a5242a3303ec88977ea8";
 
 export default node;

@@ -1,5 +1,6 @@
 import { graphql, useLazyLoadQuery } from 'react-relay';
 import { Link } from '@tanstack/react-router';
+import { AuthorByline } from '@/components/AuthorByline';
 import type { PullsListPageQuery } from './__generated__/PullsListPageQuery.graphql';
 
 const query = graphql`
@@ -17,6 +18,10 @@ const query = graphql`
           updatedAt
           author {
             login
+            avatarUrl(size: 40)
+            ... on User {
+              name
+            }
           }
           isDraft
         }
@@ -47,10 +52,22 @@ export function PullsListPage({ owner, name }: Props) {
                 <span className="opacity-50 font-normal">#{pr.number}</span>{' '}
                 {pr.title}
               </Link>
-              <div className="text-xs opacity-60 mt-0.5">
-                {pr.isDraft ? 'draft · ' : ''}
-                {pr.author?.login ?? 'ghost'} ·{' '}
-                {new Date(pr.updatedAt).toLocaleString()}
+              <div className="mt-1">
+                <AuthorByline
+                  author={
+                    pr.author
+                      ? {
+                          login: pr.author.login,
+                          avatarUrl: pr.author.avatarUrl,
+                          name:
+                            'name' in pr.author
+                              ? (pr.author.name as string | null)
+                              : null,
+                        }
+                      : null
+                  }
+                  meta={`${pr.isDraft ? 'draft · ' : ''}${new Date(pr.updatedAt).toLocaleString()}`}
+                />
               </div>
             </li>
           );

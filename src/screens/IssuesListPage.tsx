@@ -1,5 +1,6 @@
 import { graphql, useLazyLoadQuery } from 'react-relay';
 import { Link } from '@tanstack/react-router';
+import { AuthorByline } from '@/components/AuthorByline';
 import type { IssuesListPageQuery } from './__generated__/IssuesListPageQuery.graphql';
 
 const query = graphql`
@@ -17,6 +18,10 @@ const query = graphql`
           updatedAt
           author {
             login
+            avatarUrl(size: 40)
+            ... on User {
+              name
+            }
           }
           labels(first: 5) {
             nodes {
@@ -53,9 +58,22 @@ export function IssuesListPage({ owner, name }: Props) {
                 <span className="opacity-50 font-normal">#{issue.number}</span>{' '}
                 {issue.title}
               </Link>
-              <div className="text-xs opacity-60 mt-0.5">
-                {issue.author?.login ?? 'ghost'} ·{' '}
-                {new Date(issue.updatedAt).toLocaleString()}
+              <div className="mt-1">
+                <AuthorByline
+                  author={
+                    issue.author
+                      ? {
+                          login: issue.author.login,
+                          avatarUrl: issue.author.avatarUrl,
+                          name:
+                            'name' in issue.author
+                              ? (issue.author.name as string | null)
+                              : null,
+                        }
+                      : null
+                  }
+                  meta={new Date(issue.updatedAt).toLocaleString()}
+                />
               </div>
             </li>
           );
