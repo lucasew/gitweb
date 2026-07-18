@@ -11,6 +11,8 @@ import type { PullDetailPageQuery } from './__generated__/PullDetailPageQuery.gr
 import type { PullDetailPageMergeMutation } from './__generated__/PullDetailPageMergeMutation.graphql';
 import type { PullDetailPageCloseMutation } from './__generated__/PullDetailPageCloseMutation.graphql';
 import type { PullDetailPageReviewMutation } from './__generated__/PullDetailPageReviewMutation.graphql';
+import type { PullDetailPageSubmitReviewMutation } from './__generated__/PullDetailPageSubmitReviewMutation.graphql';
+import type { PullDetailPageDiscardReviewMutation } from './__generated__/PullDetailPageDiscardReviewMutation.graphql';
 import { useToast } from '@/lib/toast';
 import { useLiveQuery } from '@/lib/useLiveQuery';
 import { LoadingBlock } from '@/components/LoadingBlock';
@@ -53,6 +55,12 @@ const query = graphql`
         }
         baseRefName
         headRefName
+        viewerLatestReview {
+          id
+          state
+          body
+          bodyHTML
+        }
         reviews(first: 20) {
           nodes {
             id
@@ -97,6 +105,7 @@ const query = graphql`
                 id
                 body
                 bodyHTML
+                state
                 author {
                   login
                 }
@@ -161,6 +170,36 @@ const reviewMutation = graphql`
   }
 `;
 
+const submitReviewMutation = graphql`
+  mutation PullDetailPageSubmitReviewMutation(
+    $reviewId: ID!
+    $event: PullRequestReviewEvent!
+    $body: String
+  ) {
+    submitPullRequestReview(
+      input: { pullRequestReviewId: $reviewId, event: $event, body: $body }
+    ) {
+      pullRequestReview {
+        id
+        state
+        body
+        bodyHTML
+      }
+    }
+  }
+`;
+
+const discardReviewMutation = graphql`
+  mutation PullDetailPageDiscardReviewMutation($reviewId: ID!) {
+    deletePullRequestReview(input: { pullRequestReviewId: $reviewId }) {
+      pullRequestReview {
+        id
+        state
+      }
+    }
+  }
+`;
+
 export type PullTab = 'conversation' | 'files';
 
 type Props = {
@@ -216,6 +255,10 @@ export function PullDetailPage({
     useMutation<PullDetailPageCloseMutation>(closeMutation);
   const [commitReview, reviewInFlight] =
     useMutation<PullDetailPageReviewMutation>(reviewMutation);
+  const [commitSubmitReview, submitInFlight] =
+    useMutation<PullDetailPageSubmitReviewMutation>(submitReviewMutation);
+  const [commitDiscardReview, discardInFlight] =
+    useMutation<PullDetailPageDiscardReviewMutation>(discardReviewMutation);
 
   if (!pr) {
     return (
@@ -239,12 +282,15 @@ export function PullDetailPage({
             .map((c) => ({
               id: c!.id,
               body: c!.body,
-              bodyHTML: (c as { bodyHTML?: string | null }).bodyHTML ?? null,
+              bodyHTML: c!.bodyHTML ?? null,
+              state: c!.state ?? null,
               authorLogin: c!.author?.login ?? null,
             })) ?? [],
       })) ?? [];
 
   const canReview = !pr.merged && pr.state === 'OPEN';
+  const pendingReview =
+    pr.viewerLatestReview?.state === 'PENDING' ? pr.viewerLatestReview : null;
 
   const allowedMethods: MergeMethod[] = (
     [
@@ -306,35 +352,149 @@ export function PullDetailPage({
           </div>
 
           <div className="flex flex-wrap items-center gap-1.5 shrink-0 ms-auto pb-1">
-            {!pr.merged && pr.state === 'OPEN' ? (
-              <>
-                {allowedMethods.length > 0 ? (
-                  <label className="flex items-center gap-1 text-xs min-w-0">
-                    <span className="opacity-60 hidden sm:inline shrink-0">
-                      Strategy
-                    </span>
-                    <select
-                      className="select select-bordered select-sm w-auto max-w-[min(100%,12rem)]"
-                      value={activeMergeMethod}
-                      disabled={mergeInFlight || merging}
-                      onChange={(e) =>
-                        setMergeMethod(e.target.value as MergeMethod)
-                      }
-                      aria-label="Merge strategy"
-                    >
-                      {allowedMethods.map((m) => (
-                        <option key={m} value={m}>
-                          {MERGE_LABELS[m]}
-                        </option>
+            {pendingReview ? (
+              <span className="badge badge-warning badge-sm gap-1">
+                Pending review
+              </span>
+            ) : null}
+
+            {canReview ? (
+              <div className="dropdown dropdown-end">
+                <div
+                  tabIndex={0}
+                  role="button"
+                  className="btn btn-sm btn-outline"
+                >
+                  Review
+                  <span className="opacity-50 text-xs">▾</span>
+                </div>
+                <ul
+                  tabIndex={0}
+                  className="dropdown-content menu bg-base-100 rounded-box z-50 w-52 p-2 shadow border border-base-300"
+                >
+                  {pendingReview ? (
+                    <>
+                      <li className="menu-title">
+                        <span>Submit pending</span>
+                      </li>
+                      {(
+                        [
+                          ['APPROVE', 'Approve'],
+                          ['COMMENT', 'Comment only'],
+                          ['REQUEST_CHANGES', 'Request changes'],
+                        ] as const
+                      ).map(([event, label]) => (
+                        <li key={event}>
+                          <button
+                            type="button"
+                            disabled={submitInFlight}
+                            onClick={() => {
+                              commitSubmitReview({
+                                variables: {
+                                  reviewId: pendingReview.id,
+                                  event,
+                                  body: reviewBody.trim() || null,
+                                },
+                                onCompleted: () => {
+                                  setReviewBody('');
+                                  toast.info(`Review submitted: ${label}`);
+                                  refresh();
+                                },
+                                onError: (e) =>
+                                  toast.error('Submit review failed', e.message),
+                              });
+                            }}
+                          >
+                            {label}
+                          </button>
+                        </li>
                       ))}
-                    </select>
-                  </label>
-                ) : (
-                  <span className="text-xs opacity-60">No merge methods</span>
-                )}
+                      <li>
+                        <button
+                          type="button"
+                          className="text-error"
+                          disabled={discardInFlight}
+                          onClick={() => {
+                            commitDiscardReview({
+                              variables: { reviewId: pendingReview.id },
+                              onCompleted: () => {
+                                toast.info('Pending review discarded');
+                                refresh();
+                              },
+                              onError: (e) =>
+                                toast.error('Discard failed', e.message),
+                            });
+                          }}
+                        >
+                          Discard pending
+                        </button>
+                      </li>
+                    </>
+                  ) : (
+                    <>
+                      <li className="menu-title">
+                        <span>Start review</span>
+                      </li>
+                      {(
+                        [
+                          ['APPROVE', 'Approve'],
+                          ['COMMENT', 'Comment'],
+                          ['REQUEST_CHANGES', 'Request changes'],
+                        ] as const
+                      ).map(([event, label]) => (
+                        <li key={event}>
+                          <button
+                            type="button"
+                            disabled={reviewInFlight}
+                            onClick={() => {
+                              commitReview({
+                                variables: {
+                                  id: pr.id,
+                                  event,
+                                  body: reviewBody.trim() || null,
+                                },
+                                onCompleted: () => {
+                                  setReviewBody('');
+                                  toast.info(`Review: ${label}`);
+                                  refresh();
+                                },
+                                onError: (e) =>
+                                  toast.error('Review failed', e.message),
+                              });
+                            }}
+                          >
+                            {label}
+                          </button>
+                        </li>
+                      ))}
+                    </>
+                  )}
+                </ul>
+              </div>
+            ) : null}
+
+            {canReview ? (
+              <div className="join rounded-full border border-base-300 overflow-hidden bg-base-100">
+                {allowedMethods.length > 0 ? (
+                  <select
+                    className="select select-sm join-item border-0 bg-transparent focus:outline-none w-auto max-w-[min(100%,11rem)] rounded-none"
+                    value={activeMergeMethod}
+                    disabled={mergeInFlight || merging}
+                    onChange={(e) =>
+                      setMergeMethod(e.target.value as MergeMethod)
+                    }
+                    aria-label="Merge strategy"
+                  >
+                    {allowedMethods.map((m) => (
+                      <option key={m} value={m}>
+                        {MERGE_LABELS[m]}
+                      </option>
+                    ))}
+                  </select>
+                ) : null}
                 <button
                   type="button"
-                  className="btn btn-sm btn-primary"
+                  className="btn btn-sm btn-primary join-item rounded-none border-0"
                   disabled={
                     mergeInFlight ||
                     merging ||
@@ -379,30 +539,34 @@ export function PullDetailPage({
                     ? 'Merging…'
                     : MERGE_SHORT[activeMergeMethod]}
                 </button>
-                <button
-                  type="button"
-                  className="btn btn-sm"
-                  disabled={closeInFlight}
-                  onClick={() => {
-                    commitClose({
-                      variables: { id: pr.id },
-                      optimisticResponse: {
-                        closePullRequest: {
-                          pullRequest: {
-                            id: pr.id,
-                            state: 'CLOSED',
-                            merged: false,
-                          },
+              </div>
+            ) : null}
+
+            {canReview ? (
+              <button
+                type="button"
+                className="btn btn-sm"
+                disabled={closeInFlight}
+                onClick={() => {
+                  commitClose({
+                    variables: { id: pr.id },
+                    optimisticResponse: {
+                      closePullRequest: {
+                        pullRequest: {
+                          id: pr.id,
+                          state: 'CLOSED',
+                          merged: false,
                         },
                       },
-                      onError: (e) => toast.error('Close failed', e.message),
-                    });
-                  }}
-                >
-                  Close
-                </button>
-              </>
+                    },
+                    onError: (e) => toast.error('Close failed', e.message),
+                  });
+                }}
+              >
+                Close
+              </button>
             ) : null}
+
             <ExternalLink className="btn btn-sm btn-ghost" href={pr.url}>
               GitHub
             </ExternalLink>
@@ -451,21 +615,32 @@ export function PullDetailPage({
                 {pr.reviews?.nodes?.map((r) =>
                   r ? (
                     <li key={r.id} className="text-xs border border-base-300 rounded p-2 space-y-1">
-                      <AuthorByline
-                        author={
-                          r.author
-                            ? {
-                                login: r.author.login,
-                                avatarUrl: r.author.avatarUrl,
-                                name:
-                                  r.author && 'name' in r.author
-                                    ? (r.author as { name?: string | null }).name
-                                    : null,
-                              }
-                            : null
-                        }
-                        meta={r.state}
-                      />
+                      <div className="flex flex-wrap items-center gap-2">
+                        <AuthorByline
+                          className="flex-1 min-w-0"
+                          author={
+                            r.author
+                              ? {
+                                  login: r.author.login,
+                                  avatarUrl: r.author.avatarUrl,
+                                  name:
+                                    r.author && 'name' in r.author
+                                      ? (r.author as { name?: string | null })
+                                          .name
+                                      : null,
+                                }
+                              : null
+                          }
+                          meta={
+                            r.state === 'PENDING' ? undefined : r.state
+                          }
+                        />
+                        {r.state === 'PENDING' ? (
+                          <span className="badge badge-warning badge-sm shrink-0">
+                            Pending
+                          </span>
+                        ) : null}
+                      </div>
                       {r.body || r.bodyHTML ? (
                         <div className="mt-1">
                           <GithubMarkdown html={r.bodyHTML} text={r.body} />

@@ -24,6 +24,7 @@ export type ReviewThreadSummary = {
     id: string;
     body: string;
     bodyHTML?: string | null;
+    state?: string | null;
     authorLogin: string | null;
   }>;
 };
@@ -244,9 +245,14 @@ function SafeDiffView({
               ) : null}
               {th.comments.map((c) => (
                 <div key={c.id} className="mb-1 last:mb-0">
-                  <span className="text-xs opacity-60">
-                    @{c.authorLogin ?? 'ghost'}
-                  </span>
+                  <div className="flex flex-wrap items-center gap-1.5 text-xs opacity-60">
+                    <span>@{c.authorLogin ?? 'ghost'}</span>
+                    {c.state === 'PENDING' ? (
+                      <span className="badge badge-warning badge-xs opacity-100">
+                        Pending
+                      </span>
+                    ) : null}
+                  </div>
                   <GithubMarkdown html={c.bodyHTML} text={c.body} />
                 </div>
               ))}
