@@ -55,3 +55,11 @@
   height: auto;
 }
 /* Open markdown links in new tab via CSS can't; fix in DOMPurify hook below if needed */
+
+/* Native <select> menus: keep solid (not washed out by transparent parents) */
+select.opacity-100,
+select.opacity-100 option {
+  background-color: var(--color-base-100);
+  color: var(--color-base-content);
+  opacity: 1;
+}
