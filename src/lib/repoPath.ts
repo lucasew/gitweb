@@ -54,8 +54,14 @@ export function resolveRepoPath(
 /**
  * Whether the command palette query should be treated as a path jump
  * while browsing code (not a slash command / owner/repo only).
+ *
+ * @param inCode — on blob/tree pages, prefer repo-relative paths over
+ *   owner/repo disambiguation (so `src` / `src/lib` work from root).
  */
-export function isPathExpression(q: string): boolean {
+export function isPathExpression(
+  q: string,
+  opts?: { inCode?: boolean },
+): boolean {
   const t = q.trim();
   if (!t || /\s/.test(t)) return false;
   // slash commands for sections
@@ -74,10 +80,12 @@ export function isPathExpression(q: string): boolean {
     }
     return true;
   }
-  // multi-segment relative: src/foo — not bare owner/repo (two plain segments)
+  // multi-segment relative
   if (t.includes('/')) {
     const parts = t.split('/');
+    // off code pages: `owner/repo` (two plain segments) is not a file path
     if (
+      !opts?.inCode &&
       parts.length === 2 &&
       parts[0] &&
       parts[1] &&
@@ -90,6 +98,8 @@ export function isPathExpression(q: string): boolean {
   }
   // bare filename with extension: index.css
   if (/\.[a-zA-Z0-9]{1,12}$/.test(t)) return true;
+  // bare directory / file name while already in a repo tree/blob
+  if (opts?.inCode && /^[\w.@+-]+$/.test(t)) return true;
   return false;
 }
 

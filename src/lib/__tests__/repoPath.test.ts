@@ -45,6 +45,12 @@ describe('isPathExpression', () => {
     expect(isPathExpression('/code')).toBe(false);
     expect(isPathExpression('/issues foo')).toBe(false);
   });
+  it('inCode: folders from root (no extension)', () => {
+    expect(isPathExpression('src', { inCode: true })).toBe(true);
+    expect(isPathExpression('src/lib', { inCode: true })).toBe(true);
+    // still owner/repo when not in code
+    expect(isPathExpression('src/lib')).toBe(false);
+  });
 });
 
 describe('appPathForObject', () => {

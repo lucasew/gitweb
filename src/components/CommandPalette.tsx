@@ -190,8 +190,13 @@ function buildItems(
   const q = rawQ.trim();
   const slash = parseSlashCommand(q);
 
-  // Path expression relative to current blob/tree
-  if (codeLoc && current && !slash && isPathExpression(q)) {
+  // Path expression relative to current blob/tree (incl. repo root tree)
+  if (
+    codeLoc &&
+    current &&
+    !slash &&
+    isPathExpression(q, { inCode: true })
+  ) {
     const cwd = cwdFromCodeLocation(codeLoc);
     const resolved = resolveRepoPath(cwd, q);
     if (resolved != null) {
@@ -294,7 +299,7 @@ function buildItems(
     for (const r of repos) {
       if (slash) {
         items.push(sectionItemFor(r, slash.cmd));
-      } else if (!(codeLoc && isPathExpression(q))) {
+      } else if (!(codeLoc && isPathExpression(q, { inCode: true }))) {
         // avoid treating path jumps as owner/repo
         items.push({
           id: `repo-${r.nameWithOwner}`,
@@ -338,7 +343,7 @@ function buildItems(
     !q.startsWith('/') &&
     !q.startsWith('.') &&
     !q.includes('..') &&
-    !(codeLoc && isPathExpression(q))
+    !(codeLoc && isPathExpression(q, { inCode: true }))
   ) {
     const bare = q.replace(/^\/+/, '');
     items.push({
@@ -352,7 +357,10 @@ function buildItems(
   }
 
   const searchQ = slash?.cmd === 'search' ? slash.rest : !slash ? q : '';
-  if (searchQ.trim() && !(codeLoc && isPathExpression(q))) {
+  if (
+    searchQ.trim() &&
+    !(codeLoc && isPathExpression(q, { inCode: true }))
+  ) {
     items.push({
       id: 'search',
       label: `Search “${searchQ.trim()}”`,
