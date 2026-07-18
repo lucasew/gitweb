@@ -448,7 +448,8 @@ Decisions locked in the 2026-07 grill session:
 15. Dual license AGPL + commercial; CLA with relicense grant  
 16. mise: `codegen:schema`, `codegen:relay`, `codegen`→`codegen:*`; `format`/`lint` → **workspaced codebase format/lint**; `ci`; weekly schema PR; **no husky**  
 17. Diff UI: `@git-diff-view/react` (confirmed); library vs own split per §8.2
-18. External links open in a **new tab** (`target=_blank` + `noopener noreferrer`)  
+18. External links open in a **new tab**
+19. PR **Files** tab is full-width; line/hunk comments via DiffView widgets + review threads (`target=_blank` + `noopener noreferrer`)  
 
 ---
 

@@ -63,6 +63,25 @@ const query = graphql`
             }
           }
         }
+        reviewThreads(first: 80) {
+          nodes {
+            id
+            path
+            line
+            startLine
+            diffSide
+            isResolved
+            comments(first: 20) {
+              nodes {
+                id
+                body
+                author {
+                  login
+                }
+              }
+            }
+          }
+        }
       }
     }
   }
@@ -151,9 +170,43 @@ export function PullDetailPage({ owner, name, number }: Props) {
     );
   }
 
+  const threads =
+    pr.reviewThreads?.nodes
+      ?.filter(Boolean)
+      .map((n) => ({
+        id: n!.id,
+        path: n!.path,
+        line: n!.line ?? null,
+        startLine: n!.startLine ?? null,
+        diffSide: n!.diffSide as 'LEFT' | 'RIGHT',
+        isResolved: n!.isResolved,
+        comments:
+          n!.comments?.nodes
+            ?.filter(Boolean)
+            .map((c) => ({
+              id: c!.id,
+              body: c!.body,
+              authorLogin: c!.author?.login ?? null,
+            })) ?? [],
+      })) ?? [];
+
+  const canReview = !pr.merged && pr.state === 'OPEN';
+
   return (
-    <div className="flex flex-col min-h-[calc(100vh-3rem)] max-w-3xl mx-auto w-full">
-      <div className="p-3 md:p-4 space-y-3 flex-1 pb-24">
+    <div
+      className={
+        tab === 'files'
+          ? 'flex flex-col min-h-[calc(100vh-3rem)] w-full'
+          : 'flex flex-col min-h-[calc(100vh-3rem)] max-w-3xl mx-auto w-full'
+      }
+    >
+      <div
+        className={
+          tab === 'files'
+            ? 'p-2 md:p-3 space-y-3 flex-1 pb-24 w-full'
+            : 'p-3 md:p-4 space-y-3 flex-1 pb-24'
+        }
+      >
         <div className="flex flex-wrap gap-2 items-start">
           <h1 className="text-xl font-semibold grow">
             {pr.title}{' '}
@@ -189,7 +242,15 @@ export function PullDetailPage({ owner, name, number }: Props) {
 
         {tab === 'files' ? (
           <Suspense fallback={<LoadingBlock label="Loading diffs…" />}>
-            <PullFilesDiff owner={owner} name={name} number={number} />
+            <PullFilesDiff
+              owner={owner}
+              name={name}
+              number={number}
+              pullRequestId={pr.id}
+              canReview={canReview}
+              threads={threads}
+              onThreadsChanged={refresh}
+            />
           </Suspense>
         ) : (
           <>

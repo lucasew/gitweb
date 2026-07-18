@@ -1,17 +1,77 @@
-import { useEffect, useMemo, useState } from 'react';
-import { DiffView, DiffModeEnum } from '@git-diff-view/react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { DiffView, DiffModeEnum, SplitSide } from '@git-diff-view/react';
 import '@git-diff-view/react/styles/diff-view-pure.css';
+import { graphql, useMutation } from 'react-relay';
 import { fetchPullFiles, type RestPullFile } from '@/lib/rest';
 import { LoadingBlock } from '@/components/LoadingBlock';
 import { ErrorBanner } from '@/components/ErrorBanner';
 import { getThemePreference } from '@/lib/theme';
 import { ExternalLink } from '@/components/ExternalLink';
+import { useToast } from '@/lib/toast';
+import type { PullFilesDiffThreadMutation } from './__generated__/PullFilesDiffThreadMutation.graphql';
+import { cn } from '@/lib/cls';
+
+export type ReviewThreadSummary = {
+  id: string;
+  path: string;
+  line: number | null;
+  startLine: number | null;
+  diffSide: 'LEFT' | 'RIGHT';
+  isResolved: boolean;
+  comments: Array<{
+    id: string;
+    body: string;
+    authorLogin: string | null;
+  }>;
+};
 
 type Props = {
   owner: string;
   name: string;
   number: number;
+  pullRequestId: string;
+  canReview: boolean;
+  threads: ReviewThreadSummary[];
+  onThreadsChanged?: () => void;
 };
+
+const threadMutation = graphql`
+  mutation PullFilesDiffThreadMutation(
+    $pullRequestId: ID!
+    $path: String!
+    $body: String!
+    $line: Int!
+    $side: DiffSide!
+  ) {
+    addPullRequestReviewThread(
+      input: {
+        pullRequestId: $pullRequestId
+        path: $path
+        body: $body
+        line: $line
+        side: $side
+        subjectType: LINE
+      }
+    ) {
+      thread {
+        id
+        path
+        line
+        diffSide
+        isResolved
+        comments(first: 5) {
+          nodes {
+            id
+            body
+            author {
+              login
+            }
+          }
+        }
+      }
+    }
+  }
+`;
 
 function themeMode(): 'light' | 'dark' {
   const pref = getThemePreference();
@@ -22,20 +82,209 @@ function themeMode(): 'light' | 'dark' {
 }
 
 function hunksFromPatch(patch: string, filename: string): string[] {
-  // git-diff-view expects hunk strings; ensure file header exists
   if (patch.startsWith('@@')) {
-    return [`diff --git a/${filename} b/${filename}\n--- a/${filename}\n+++ b/${filename}\n${patch}`];
+    return [
+      `diff --git a/${filename} b/${filename}\n--- a/${filename}\n+++ b/${filename}\n${patch}`,
+    ];
   }
   return [patch];
 }
 
-export function PullFilesDiff({ owner, name, number }: Props) {
+function sideToDiffSide(side: SplitSide): 'LEFT' | 'RIGHT' {
+  return side === SplitSide.old ? 'LEFT' : 'RIGHT';
+}
+
+function CommentWidget({
+  path,
+  lineNumber,
+  side,
+  pullRequestId,
+  onClose,
+  onDone,
+}: {
+  path: string;
+  lineNumber: number;
+  side: SplitSide;
+  pullRequestId: string;
+  onClose: () => void;
+  onDone: () => void;
+}) {
+  const toast = useToast();
+  const [body, setBody] = useState('');
+  const [commit, inFlight] =
+    useMutation<PullFilesDiffThreadMutation>(threadMutation);
+
+  return (
+    <div className="bg-base-100 border border-base-300 p-2 m-1 rounded-box space-y-2 max-w-xl">
+      <div className="text-xs opacity-60 font-mono">
+        {path}:{lineNumber} ({sideToDiffSide(side)})
+      </div>
+      <textarea
+        className="textarea textarea-bordered textarea-sm w-full min-h-20"
+        placeholder="Line comment (starts or continues a review thread)"
+        value={body}
+        autoFocus
+        onChange={(e) => setBody(e.target.value)}
+      />
+      <div className="flex gap-2">
+        <button
+          type="button"
+          className="btn btn-primary btn-xs"
+          disabled={!body.trim() || inFlight}
+          onClick={() => {
+            commit({
+              variables: {
+                pullRequestId,
+                path,
+                body: body.trim(),
+                line: lineNumber,
+                side: sideToDiffSide(side),
+              },
+              onCompleted: () => {
+                toast.info('Comment added on line');
+                setBody('');
+                onDone();
+                onClose();
+              },
+              onError: (e) => toast.error('Line comment failed', e.message),
+            });
+          }}
+        >
+          {inFlight ? 'Posting…' : 'Add comment'}
+        </button>
+        <button type="button" className="btn btn-ghost btn-xs" onClick={onClose}>
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function FileDiff({
+  file,
+  mode,
+  canReview,
+  pullRequestId,
+  threads,
+  onThreadsChanged,
+}: {
+  file: RestPullFile;
+  mode: 'unified' | 'split';
+  canReview: boolean;
+  pullRequestId: string;
+  threads: ReviewThreadSummary[];
+  onThreadsChanged?: () => void;
+}) {
+  const fileThreads = threads.filter((t) => t.path === file.filename);
+
+  const extendData = useMemo(() => {
+    const oldFile: Record<string, { data: ReviewThreadSummary[] }> = {};
+    const newFile: Record<string, { data: ReviewThreadSummary[] }> = {};
+    for (const t of fileThreads) {
+      if (t.line == null) continue;
+      const key = String(t.line);
+      const bucket = t.diffSide === 'LEFT' ? oldFile : newFile;
+      if (!bucket[key]) bucket[key] = { data: [] };
+      bucket[key].data.push(t);
+    }
+    return { oldFile, newFile };
+  }, [fileThreads]);
+
+  if (!file.patch) {
+    return (
+      <div className="alert alert-info text-sm">
+        No patch for <code className="text-xs">{file.filename}</code> (binary or
+        too large).
+      </div>
+    );
+  }
+
+  return (
+    <div className="border border-base-300 rounded-box overflow-hidden w-full">
+      <div className="px-3 py-2 bg-base-200 border-b border-base-300 flex flex-wrap gap-2 items-center sticky top-0 z-10">
+        <span className="font-mono text-sm break-all">{file.filename}</span>
+        <span className="text-success text-xs">+{file.additions}</span>
+        <span className="text-error text-xs">-{file.deletions}</span>
+        {fileThreads.length ? (
+          <span className="badge badge-sm badge-ghost">
+            {fileThreads.length} thread{fileThreads.length === 1 ? '' : 's'}
+          </span>
+        ) : null}
+      </div>
+      <div className="w-full overflow-x-auto">
+        <DiffView
+          data={{
+            oldFile: {
+              fileName: file.previous_filename ?? file.filename,
+            },
+            newFile: { fileName: file.filename },
+            hunks: hunksFromPatch(file.patch, file.filename),
+          }}
+          extendData={extendData}
+          diffViewMode={
+            mode === 'split' ? DiffModeEnum.Split : DiffModeEnum.Unified
+          }
+          diffViewTheme={themeMode()}
+          diffViewWrap
+          diffViewHighlight
+          diffViewAddWidget={canReview}
+          renderExtendLine={({ data: threadList }) => (
+            <div className="bg-base-200/80 border-y border-base-300 px-3 py-2 space-y-2 w-full">
+              {threadList.map((t) => (
+                <div
+                  key={t.id}
+                  className={cn(
+                    'text-sm border border-base-300 rounded-box p-2 bg-base-100',
+                    t.isResolved && 'opacity-60',
+                  )}
+                >
+                  {t.isResolved ? (
+                    <span className="badge badge-xs mr-1">resolved</span>
+                  ) : null}
+                  {t.comments.map((c) => (
+                    <div key={c.id} className="mb-1 last:mb-0">
+                      <span className="text-xs opacity-60">
+                        @{c.authorLogin ?? 'ghost'}
+                      </span>
+                      <div className="whitespace-pre-wrap text-sm">{c.body}</div>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          )}
+          renderWidgetLine={({ lineNumber, side, onClose }) => (
+            <CommentWidget
+              path={file.filename}
+              lineNumber={lineNumber}
+              side={side}
+              pullRequestId={pullRequestId}
+              onClose={onClose}
+              onDone={() => onThreadsChanged?.()}
+            />
+          )}
+        />
+      </div>
+    </div>
+  );
+}
+
+export function PullFilesDiff({
+  owner,
+  name,
+  number,
+  pullRequestId,
+  canReview,
+  threads,
+  onThreadsChanged,
+}: Props) {
   const [files, setFiles] = useState<RestPullFile[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [mode, setMode] = useState<'unified' | 'split'>('unified');
   const [openPath, setOpenPath] = useState<string | null>(null);
+  const [showAll, setShowAll] = useState(true);
 
-  const load = () => {
+  const load = useCallback(() => {
     setError(null);
     setFiles(null);
     void fetchPullFiles(owner, name, number)
@@ -46,17 +295,11 @@ export function PullFilesDiff({ owner, name, number }: Props) {
       .catch((e: unknown) => {
         setError(e instanceof Error ? e.message : String(e));
       });
-  };
+  }, [owner, name, number]);
 
   useEffect(() => {
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [owner, name, number]);
-
-  const active = useMemo(
-    () => files?.find((f) => f.filename === openPath) ?? null,
-    [files, openPath],
-  );
+  }, [load]);
 
   if (error) {
     return (
@@ -69,71 +312,102 @@ export function PullFilesDiff({ owner, name, number }: Props) {
   }
   if (!files) return <LoadingBlock label="Loading diffs…" />;
 
+  const visible = showAll
+    ? files
+    : files.filter((f) => f.filename === openPath);
+
   return (
-    <div className="space-y-3">
-      <div className="flex flex-wrap gap-2 items-center">
-        <div className="join">
-          <button
-            type="button"
-            className={`btn btn-xs join-item ${mode === 'unified' ? 'btn-active' : ''}`}
-            onClick={() => setMode('unified')}
-          >
-            Unified
-          </button>
-          <button
-            type="button"
-            className={`btn btn-xs join-item ${mode === 'split' ? 'btn-active' : ''}`}
-            onClick={() => setMode('split')}
-          >
-            Split
-          </button>
-        </div>
-        <span className="text-xs opacity-60">{files.length} files</span>
-      </div>
-      <ul className="menu menu-sm bg-base-200 rounded-box max-h-40 overflow-auto">
-        {files.map((f) => (
-          <li key={f.filename}>
+    <div className="flex flex-col lg:flex-row gap-0 lg:gap-3 w-full min-h-[70vh]">
+      <aside className="lg:w-64 shrink-0 border border-base-300 rounded-box bg-base-200/40 max-h-[40vh] lg:max-h-[calc(100vh-8rem)] overflow-auto lg:sticky lg:top-2">
+        <div className="p-2 flex flex-wrap gap-1 border-b border-base-300 sticky top-0 bg-base-200 z-10">
+          <div className="join">
             <button
               type="button"
-              className={openPath === f.filename ? 'active' : ''}
-              onClick={() => setOpenPath(f.filename)}
+              className={`btn btn-xs join-item ${mode === 'unified' ? 'btn-active' : ''}`}
+              onClick={() => setMode('unified')}
             >
-              <span className="font-mono text-xs truncate">{f.filename}</span>
-              <span className="text-success text-xs">+{f.additions}</span>
-              <span className="text-error text-xs">-{f.deletions}</span>
+              Unified
             </button>
-          </li>
-        ))}
-      </ul>
-      {active ? (
-        active.patch ? (
-          <div className="border border-base-300 rounded-box overflow-auto max-h-[70vh]">
-            <DiffView
-              data={{
-                oldFile: { fileName: active.previous_filename ?? active.filename },
-                newFile: { fileName: active.filename },
-                hunks: hunksFromPatch(active.patch, active.filename),
-              }}
-              diffViewMode={
-                mode === 'split' ? DiffModeEnum.Split : DiffModeEnum.Unified
-              }
-              diffViewTheme={themeMode()}
-              diffViewWrap
-              diffViewHighlight
+            <button
+              type="button"
+              className={`btn btn-xs join-item ${mode === 'split' ? 'btn-active' : ''}`}
+              onClick={() => setMode('split')}
+            >
+              Split
+            </button>
+          </div>
+          <button
+            type="button"
+            className={`btn btn-xs ${showAll ? 'btn-active' : ''}`}
+            onClick={() => setShowAll((v) => !v)}
+          >
+            {showAll ? 'All files' : 'One file'}
+          </button>
+        </div>
+        <ul className="menu menu-sm p-1">
+          {files.map((f) => {
+            const n = threads.filter((t) => t.path === f.filename).length;
+            return (
+              <li key={f.filename}>
+                <button
+                  type="button"
+                  className={cn(
+                    'font-mono text-xs',
+                    !showAll && openPath === f.filename && 'active',
+                  )}
+                  onClick={() => {
+                    setOpenPath(f.filename);
+                    if (showAll) {
+                      const el = document.querySelector(
+                        `[data-diff-path="${CSS.escape(f.filename)}"]`,
+                      );
+                      el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                  }}
+                >
+                  <span className="truncate">{f.filename}</span>
+                  <span className="text-success">+{f.additions}</span>
+                  <span className="text-error">-{f.deletions}</span>
+                  {n ? <span className="badge badge-xs">{n}</span> : null}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+        <div className="p-2 text-xs opacity-60 border-t border-base-300">
+          {canReview
+            ? 'Click + on a line to comment on that hunk.'
+            : 'Read-only: open PR to leave line comments.'}{' '}
+          <ExternalLink
+            className="link"
+            href={`https://github.com/${owner}/${name}/pull/${number}/files`}
+          >
+            GitHub
+          </ExternalLink>
+        </div>
+      </aside>
+
+      <div className="flex-1 min-w-0 space-y-4 w-full">
+        {visible.map((f) => (
+          <div
+            key={f.filename}
+            data-diff-path={f.filename}
+            className="w-full"
+          >
+            <FileDiff
+              file={f}
+              mode={mode}
+              canReview={canReview}
+              pullRequestId={pullRequestId}
+              threads={threads}
+              onThreadsChanged={onThreadsChanged}
             />
           </div>
-        ) : (
-          <div className="alert alert-info text-sm">
-            No patch available (binary or too large).{' '}
-            <ExternalLink
-              className="link"
-              href={`https://github.com/${owner}/${name}/pull/${number}/files`}
-            >
-              Open on GitHub
-            </ExternalLink>
-          </div>
-        )
-      ) : null}
+        ))}
+        {!visible.length ? (
+          <div className="opacity-60 text-sm">No files to show.</div>
+        ) : null}
+      </div>
     </div>
   );
 }
