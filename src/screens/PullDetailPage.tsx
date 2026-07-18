@@ -259,26 +259,16 @@ export function PullDetailPage({
   const activeMergeMethod = mergeMethod ?? defaultMethod;
 
   return (
-    <div
-      className={
-        tab === 'files'
-          ? 'flex flex-col min-h-[calc(100vh-3rem)] w-full'
-          : 'flex flex-col min-h-[calc(100vh-3rem)] max-w-3xl mx-auto w-full'
-      }
-    >
-      <div
-        className={
-          tab === 'files'
-            ? 'p-2 md:p-3 space-y-3 flex-1 pb-24 w-full'
-            : 'p-3 md:p-4 space-y-3 flex-1 pb-24'
-        }
-      >
-        <div className="flex flex-wrap gap-2 items-start">
-          <h1 className="text-xl font-semibold grow">
+    <div className="flex flex-col min-h-[calc(100vh-3rem)] w-full">
+      <div className="p-3 md:p-4 space-y-3 flex-1 pb-24 w-full">
+        {/* Header + tabs: always full content width (same on conversation and files) */}
+        <div className="flex items-start gap-2 w-full">
+          <h1 className="text-xl font-semibold min-w-0 flex-1">
             {pr.title}{' '}
             <span className="opacity-50 font-normal">#{pr.number}</span>
           </h1>
           <PrStateBadge
+            className="shrink-0"
             state={pr.state}
             merged={pr.merged}
             isDraft={pr.isDraft}
@@ -289,7 +279,7 @@ export function PullDetailPage({
           {pr.headRefName} → {pr.baseRefName}
         </div>
 
-        <div role="tablist" className="tabs tabs-bordered">
+        <div role="tablist" className="tabs tabs-bordered w-full">
           <Link
             role="tab"
             to="/$owner/$name/pull/$number"
@@ -323,7 +313,7 @@ export function PullDetailPage({
             />
           </Suspense>
         ) : (
-          <>
+          <div className="max-w-3xl w-full space-y-3">
             <div className="border border-base-300 rounded-box p-3">
               <div className="mb-2">
                 <AuthorByline
@@ -462,11 +452,11 @@ export function PullDetailPage({
                 </div>
               </div>
             ) : null}
-          </>
+          </div>
         )}
       </div>
 
-      <div className="sticky bottom-0 border-t border-base-300 bg-base-100 p-2 flex flex-wrap gap-2 items-center">
+      <div className="sticky bottom-0 border-t border-base-300 bg-base-100 p-2 flex flex-wrap gap-2 items-center w-full">
         {!pr.merged && pr.state === 'OPEN' ? (
           <>
             {allowedMethods.length > 0 ? (
