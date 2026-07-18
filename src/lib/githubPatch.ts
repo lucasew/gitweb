@@ -1,76 +1,53 @@
 /**
- * Normalize GitHub REST pull-file `patch` strings for @git-diff-view.
+ * Normalize GitHub REST pull-file `patch` for @git-diff-view.
  *
- * GitHub returns a partial unified diff (often starting at `@@`, no git headers,
- * CRLF, missing trailing newline). The DiffView parser throws
- * "Expected unified diff line but reached end of diff" on malformed input.
+ * GitHub returns a partial unified diff (starts at `@@`, no git headers).
+ * DiffView needs a full document (`diff --git` / `---` / `+++` / hunks) as a
+ * **single** hunks[] entry — splitting into bare `@@` hunks parses to 0 lines.
  */
 
-export function normalizeGithubPatch(patch: string): string[] {
+export function normalizeGithubPatch(
+  patch: string,
+  filename: string,
+  previousFilename?: string | null,
+  status?: string,
+): string[] {
   if (!patch || !patch.trim()) return [];
 
-  // Unify newlines
-  let text = patch.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-  if (!text.endsWith('\n')) text += '\n';
+  let body = patch.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  if (!body.endsWith('\n')) body += '\n';
 
-  // Drop any leading non-hunk noise (some clients prepend headers)
-  const firstHunk = text.indexOf('@@');
+  const firstHunk = body.indexOf('@@');
   if (firstHunk === -1) return [];
-  text = text.slice(firstHunk);
+  body = body.slice(firstHunk);
 
-  // Split into individual @@ hunks (DiffView accepts an array of hunk strings)
-  const rawParts = text.split(/(?=^@@)/m).filter((p) => p.length > 0);
-  const hunks: string[] = [];
+  const { oldName, newName } = patchFileNames(
+    filename,
+    previousFilename,
+    status,
+  );
 
-  for (const part of rawParts) {
-    if (!part.startsWith('@@')) continue;
-    const fixed = fixHunkBody(part);
-    if (fixed) hunks.push(fixed);
-  }
+  // Full unified-diff document (one element). Multi-element bare @@ hunks
+  // silently render empty in @git-diff-view.
+  const full = [
+    `diff --git a/${escapePath(oldName)} b/${escapePath(newName)}`,
+    oldName === '/dev/null' ? 'new file mode 100644' : null,
+    newName === '/dev/null' ? 'deleted file mode 100644' : null,
+    `--- ${oldName === '/dev/null' ? '/dev/null' : `a/${escapePath(oldName)}`}`,
+    `+++ ${newName === '/dev/null' ? '/dev/null' : `b/${escapePath(newName)}`}`,
+    body.replace(/\n$/, ''), // joined below with final newline
+  ]
+    .filter((l): l is string => l != null)
+    .join('\n');
 
-  return hunks;
+  return [`${full}\n`];
 }
 
-/**
- * Ensure every content line has a valid unified-diff prefix and the hunk ends
- * cleanly with a newline.
- */
-function fixHunkBody(hunk: string): string | null {
-  let text = hunk.endsWith('\n') ? hunk : `${hunk}\n`;
-  const lines = text.split('\n');
-  // last split element is '' after trailing \n
-  if (lines.length && lines[lines.length - 1] === '') lines.pop();
-  if (!lines.length || !lines[0]!.startsWith('@@')) return null;
-
-  const out: string[] = [lines[0]!];
-  for (let i = 1; i < lines.length; i++) {
-    const line = lines[i]!;
-    // Valid unified prefixes: ' ', '+', '-', '\', or empty (treat empty as context ' ')
-    if (
-      line.startsWith(' ') ||
-      line.startsWith('+') ||
-      line.startsWith('-') ||
-      line.startsWith('\\')
-    ) {
-      out.push(line);
-    } else if (line === '') {
-      // empty line in patch = context empty line
-      out.push(' ');
-    } else if (line.startsWith('@@')) {
-      // shouldn't happen mid-hunk after split; start new (ignore / merge)
-      break;
-    } else {
-      // Unexpected — treat as context so the parser doesn't die
-      out.push(` ${line}`);
-    }
-  }
-
-  // Parser wants a complete hunk; ensure at least header
-  if (out.length < 1) return null;
-  return `${out.join('\n')}\n`;
+function escapePath(path: string): string {
+  // Keep path as-is; GitHub paths rarely need quoting for this viewer
+  return path;
 }
 
-/** Safe filename for display in headers (no path tricks needed for hunks-only). */
 export function patchFileNames(
   filename: string,
   previousFilename?: string | null,
@@ -82,7 +59,7 @@ export function patchFileNames(
   if (status === 'removed') {
     return { oldName: filename, newName: '/dev/null' };
   }
-  if (status === 'renamed' && previousFilename) {
+  if ((status === 'renamed' || status === 'copied') && previousFilename) {
     return { oldName: previousFilename, newName: filename };
   }
   return {

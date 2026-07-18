@@ -1,11 +1,5 @@
-import {
-  Component,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
-import { DiffView, DiffModeEnum, SplitSide } from '@git-diff-view/react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { DiffFile, DiffView, DiffModeEnum, SplitSide } from '@git-diff-view/react';
 import '@git-diff-view/react/styles/diff-view-pure.css';
 import { graphql, useMutation } from 'react-relay';
 import { fetchPullFiles, type RestPullFile } from '@/lib/rest';
@@ -166,6 +160,7 @@ type ExtendData = {
   newFile: Record<string, { data: ReviewThreadSummary[] }>;
 };
 
+
 function SafeDiffView({
   hunks,
   oldName,
@@ -187,13 +182,36 @@ function SafeDiffView({
   pullRequestId: string;
   onThreadsChanged?: () => void;
 }) {
-  const [failed, setFailed] = useState<string | null>(null);
+  const theme = themeMode();
 
-  if (failed) {
+  const { diffFile, parseError } = useMemo(() => {
+    try {
+      const file = new DiffFile(oldName, '', newName, '', hunks);
+      file.initTheme(theme);
+      file.init();
+      file.buildSplitDiffLines();
+      file.buildUnifiedDiffLines();
+      if (file.unifiedLineLength === 0 && file.splitLineLength === 0) {
+        return {
+          diffFile: null as DiffFile | null,
+          parseError: 'Parsed diff is empty' as string | null,
+        };
+      }
+      return { diffFile: file, parseError: null as string | null };
+    } catch (e) {
+      return {
+        diffFile: null as DiffFile | null,
+        parseError: e instanceof Error ? e.message : String(e),
+      };
+    }
+  }, [hunks, oldName, newName, theme]);
+
+  if (parseError || !diffFile) {
     return (
       <div className="p-3 space-y-2">
         <div className="alert alert-warning text-sm">
-          Diff viewer could not parse this patch ({failed}). Raw patch below.
+          Diff viewer could not parse this patch
+          {parseError ? ` (${parseError})` : ''}. Raw patch below.
         </div>
         <pre className="text-xs overflow-auto max-h-[min(40vh,24rem)] bg-base-200 p-2 rounded-box whitespace-pre-wrap">
           {hunks.join('')}
@@ -203,115 +221,51 @@ function SafeDiffView({
   }
 
   return (
-    <DiffViewErrorBoundary
-      onError={(msg) => setFailed(msg)}
-      hunks={hunks}
-      oldName={oldName}
-      newName={newName}
-      mode={mode}
-      canReview={canReview}
+    <DiffView
+      diffFile={diffFile}
       extendData={extendData}
-      path={path}
-      pullRequestId={pullRequestId}
-      onThreadsChanged={onThreadsChanged}
+      diffViewMode={mode === 'split' ? DiffModeEnum.Split : DiffModeEnum.Unified}
+      diffViewTheme={theme}
+      diffViewWrap
+      diffViewHighlight={false}
+      diffViewAddWidget={canReview}
+      renderExtendLine={({ data: threadList }) => (
+        <div className="bg-base-200/80 border-y border-base-300 px-3 py-2 space-y-2 w-full">
+          {threadList.map((th) => (
+            <div
+              key={th.id}
+              className={cn(
+                'text-sm border border-base-300 rounded-box p-2 bg-base-100',
+                th.isResolved && 'opacity-60',
+              )}
+            >
+              {th.isResolved ? (
+                <span className="badge badge-xs me-1">resolved</span>
+              ) : null}
+              {th.comments.map((c) => (
+                <div key={c.id} className="mb-1 last:mb-0">
+                  <span className="text-xs opacity-60">
+                    @{c.authorLogin ?? 'ghost'}
+                  </span>
+                  <GithubMarkdown html={c.bodyHTML} text={c.body} />
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+      renderWidgetLine={({ lineNumber, side, onClose }) => (
+        <CommentWidget
+          path={path}
+          lineNumber={lineNumber}
+          side={side}
+          pullRequestId={pullRequestId}
+          onClose={onClose}
+          onDone={() => onThreadsChanged?.()}
+        />
+      )}
     />
   );
-}
-
-/** Catches DiffView parse throws during render */
-class DiffViewErrorBoundary extends Component<
-  {
-    children?: never;
-    onError: (msg: string) => void;
-    hunks: string[];
-    oldName: string;
-    newName: string;
-    mode: 'unified' | 'split';
-    canReview: boolean;
-    extendData: ExtendData;
-    path: string;
-    pullRequestId: string;
-    onThreadsChanged?: () => void;
-  },
-  { error: string | null }
-> {
-  state = { error: null as string | null };
-
-  static getDerivedStateFromError(error: Error) {
-    return { error: error.message || 'parse error' };
-  }
-
-  componentDidCatch(error: Error) {
-    this.props.onError(error.message || 'parse error');
-  }
-
-  render() {
-    if (this.state.error) return null;
-    const {
-      hunks,
-      oldName,
-      newName,
-      mode,
-      canReview,
-      extendData,
-      path,
-      pullRequestId,
-      onThreadsChanged,
-    } = this.props;
-
-    return (
-      <DiffView
-        data={{
-          oldFile: { fileName: oldName },
-          newFile: { fileName: newName },
-          hunks,
-        }}
-        extendData={extendData}
-        diffViewMode={
-          mode === 'split' ? DiffModeEnum.Split : DiffModeEnum.Unified
-        }
-        diffViewTheme={themeMode()}
-        diffViewWrap
-        diffViewHighlight={false}
-        diffViewAddWidget={canReview}
-        renderExtendLine={({ data: threadList }) => (
-          <div className="bg-base-200/80 border-y border-base-300 px-3 py-2 space-y-2 w-full">
-            {threadList.map((th) => (
-              <div
-                key={th.id}
-                className={cn(
-                  'text-sm border border-base-300 rounded-box p-2 bg-base-100',
-                  th.isResolved && 'opacity-60',
-                )}
-              >
-                {th.isResolved ? (
-                  <span className="badge badge-xs me-1">resolved</span>
-                ) : null}
-                {th.comments.map((c) => (
-                  <div key={c.id} className="mb-1 last:mb-0">
-                    <span className="text-xs opacity-60">
-                      @{c.authorLogin ?? 'ghost'}
-                    </span>
-                    <GithubMarkdown html={c.bodyHTML} text={c.body} />
-                  </div>
-                ))}
-              </div>
-            ))}
-          </div>
-        )}
-        renderWidgetLine={({ lineNumber, side, onClose }) => (
-          <CommentWidget
-            path={path}
-            lineNumber={lineNumber}
-            side={side}
-            pullRequestId={pullRequestId}
-            onClose={onClose}
-            onDone={() => onThreadsChanged?.()}
-          />
-        )}
-      />
-    );
-  }
 }
 
 function FileDiff({
@@ -353,8 +307,13 @@ function FileDiff({
     );
   }
 
-  const hunks = normalizeGithubPatch(file.patch);
   const names = patchFileNames(
+    file.filename,
+    file.previous_filename,
+    file.status,
+  );
+  const hunks = normalizeGithubPatch(
+    file.patch,
     file.filename,
     file.previous_filename,
     file.status,
