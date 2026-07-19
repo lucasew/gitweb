@@ -70,7 +70,7 @@ function sectionCandidates(
       hint: '/commits',
       value: `commits commit history log ${here} /commits`,
       group,
-      icon: 'code',
+      icon: 'commits',
       priority: priority + 4,
       action: {
         kind: 'navigate',
@@ -80,7 +80,22 @@ function sectionCandidates(
   ];
 }
 
-/** /code /issues /prs for current repo (and empty query). */
+function sectionIcon(
+  icon: GotoCandidate['icon'],
+): 'code' | 'issues' | 'prs' | 'actions' | 'commits' | null {
+  if (
+    icon === 'code' ||
+    icon === 'issues' ||
+    icon === 'prs' ||
+    icon === 'actions' ||
+    icon === 'commits'
+  ) {
+    return icon;
+  }
+  return null;
+}
+
+/** /code /issues /prs /actions /commits for current repo (and empty query). */
 export const hereSectionProvider: GotoProvider = (q, ctx) => {
   if (!ctx.repo) return [];
   const slash = parseSlashCommand(q);
@@ -92,17 +107,8 @@ export const hereSectionProvider: GotoProvider = (q, ctx) => {
   );
   if (slash) {
     if (slash.cmd === 'search' || slash.cmd === 'switch') return [];
-    if (slash.cmd === 'commits') {
-      return all.filter((c) => c.hint === '/commits');
-    }
     return all.filter((c) => {
-      const section =
-        c.icon === 'code' ||
-        c.icon === 'issues' ||
-        c.icon === 'prs' ||
-        c.icon === 'actions'
-          ? c.icon
-          : null;
+      const section = sectionIcon(c.icon);
       return section != null && slashMatches(slash, section);
     });
   }
@@ -148,17 +154,8 @@ export const jumpSectionProvider: GotoProvider = (q, ctx) => {
   const repos = filterRepos(ctx.recent, ctx.repo, slash.rest);
   return repos.flatMap((r) => {
     const base = sectionCandidates(r.owner, r.name, GROUP.jump, 30);
-    if (slash.cmd === 'commits') {
-      return base.filter((c) => c.hint === '/commits');
-    }
     return base.filter((c) => {
-      const section =
-        c.icon === 'code' ||
-        c.icon === 'issues' ||
-        c.icon === 'prs' ||
-        c.icon === 'actions'
-          ? c.icon
-          : null;
+      const section = sectionIcon(c.icon);
       return section != null && slashMatches(slash, section);
     });
   });

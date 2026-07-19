@@ -31,6 +31,7 @@ export type GotoIcon =
   | 'issues'
   | 'prs'
   | 'actions'
+  | 'commits'
   | 'path'
   | 'home'
   | 'search'
