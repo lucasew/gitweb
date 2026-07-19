@@ -309,7 +309,7 @@ export function ActionsRunPage({ owner, name, runId }: Props) {
           {repoId && run.checkSuite?.id ? (
             <button
               type="button"
-              className="btn btn-sm btn-outline"
+              className="btn btn-sm btn-ghost"
               disabled={rerequestBusy}
               onClick={() => {
                 commitRerequest({
@@ -381,7 +381,7 @@ export function ActionsRunPage({ owner, name, runId }: Props) {
                     </button>
                     <button
                       type="button"
-                      className="btn btn-xs btn-error btn-outline"
+                      className="btn btn-xs btn-ghost text-error"
                       disabled={rejectBusy}
                       onClick={() => {
                         commitReject({
@@ -653,7 +653,7 @@ function JobLogPanel({
         {logs ? (
           <button
             type="button"
-            className="btn btn-xs btn-outline"
+            className="btn btn-xs btn-ghost"
             onClick={downloadRaw}
           >
             Download raw

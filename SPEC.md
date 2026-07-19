@@ -470,6 +470,24 @@ Semantic tones (daisyUI badge classes). One legend app-wide for lifecycle and re
 3. Do **not** use solid warning for pending, or error for changes requested.  
 4. One-line mnemonic: green = good path · yellow solid = review friction · yellow outline = unfinished review · blue = WIP · red = closed · ghost = quiet · purple = merged only.
 
+### 13.2 Buttons — no outlines
+
+**Do not use `btn-outline`** on buttons (or button-styled links) anywhere in the app.
+
+| Role | Prefer |
+|------|--------|
+| Primary / commit | `btn-primary` (solid) |
+| Quiet / secondary / toolbar / menus | `btn-ghost` |
+| Destructive secondary | `btn-ghost text-error` |
+| Success / danger primary | solid `btn-success` / `btn-error` |
+| Icon-only chrome | `btn-ghost` (+ `btn-circle` / `btn-square` as needed) |
+
+**Why:** outlined daisyUI buttons read as heavy chrome and fight density; ghost + solid emphasis already covers hierarchy.
+
+**Not the same as badges:** `badge-outline` for **pending** status chips (§13.1) remains required. That rule is about badges only.
+
+**Encoding:** when adding a control, default to `btn-ghost`; promote to solid only for the one primary action in a cluster. Never reach for `btn-outline`.
+
 ---
 
 ## 14. Decision log (source)
@@ -499,6 +517,8 @@ Decisions locked in the 2026-07 grill session:
 20. Chrome: breadcrumb + section icons; no sidebar; ⌘K slash commands; line/hunk comments via DiffView widgets + review threads (`target=_blank` + `noopener noreferrer`)  
 21. Status badge colors: SPEC §13.1 (changes requested = solid warning; pending = outline warning; merging = info; closed = error; approved/open = success; draft/commented = ghost; merged = purple only)  
 22. Product name: **ghweb** (formerly gitweb); storage keys `ghweb.*` with one-shot migrate from `gitweb.*`  
+23. Buttons: **no `btn-outline`** — ghost for secondary/toolbar/menus; solid for primary/danger/success (§13.2). Badge outline for pending only.  
+
 
 
 ---

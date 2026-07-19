@@ -19,7 +19,13 @@ import {
   CircleCheck,
   ExternalLink as ExternalLinkIcon,
   Ellipsis,
+  FileWarning,
+  GitBranch,
+  GitCommitHorizontal,
+  GitMerge,
   GitPullRequestDraft,
+  MessageSquare,
+  Trash2,
   XCircle,
 } from 'lucide-react';
 import type {
@@ -326,7 +332,13 @@ export function PullDetailPage({
   const actionsAnchorName = `--${actionsPopoverDomId}`;
   const actionsPopoverRef = useRef<HTMLDivElement>(null);
   const closeActionsPopover = () => {
-    actionsPopoverRef.current?.hidePopover?.();
+    const el = actionsPopoverRef.current;
+    if (!el || typeof el.hidePopover !== 'function') return;
+    try {
+      el.hidePopover();
+    } catch {
+      /* already closed */
+    }
   };
 
   const [commitMerge, mergeInFlight] =
@@ -589,7 +601,7 @@ export function PullDetailPage({
               <>
                 <button
                   type="button"
-                  className="btn btn-sm btn-outline gap-1.5"
+                  className="btn btn-sm btn-ghost gap-1.5"
                   title="PR actions"
                   aria-label="PR actions"
                   popoverTarget={actionsPopoverDomId}
@@ -623,10 +635,13 @@ export function PullDetailPage({
                       type="button"
                       className={cn(
                         'btn btn-sm w-full justify-start gap-2',
-                        pr.isDraft ? 'btn-primary' : 'btn-outline',
+                        pr.isDraft ? 'btn-primary' : 'btn-ghost',
                       )}
                       disabled={draftBusy}
+                      popoverTarget={actionsPopoverDomId}
+                      popoverTargetAction="hide"
                       onClick={() => {
+                        closeActionsPopover();
                         if (pr.isDraft) {
                           commitReadyForReview({
                             variables: { id: pr.id },
@@ -642,7 +657,6 @@ export function PullDetailPage({
                             onCompleted: () => {
                               toast.info('Marked ready for review');
                               refresh();
-                              closeActionsPopover();
                             },
                             onError: (e) =>
                               toast.error('Could not mark ready', e.message),
@@ -662,7 +676,6 @@ export function PullDetailPage({
                             onCompleted: () => {
                               toast.info('Converted to draft');
                               refresh();
-                              closeActionsPopover();
                             },
                             onError: (e) =>
                               toast.error(
@@ -702,37 +715,44 @@ export function PullDetailPage({
                     <div className="flex flex-col gap-1">
                       {(
                         [
-                          ['APPROVE', 'Approve'],
+                          ['APPROVE', 'Approve', CircleCheck],
                           [
                             'COMMENT',
                             pendingReview ? 'Comment only' : 'Comment',
+                            MessageSquare,
                           ],
-                          ['REQUEST_CHANGES', 'Request changes'],
+                          [
+                            'REQUEST_CHANGES',
+                            'Request changes',
+                            FileWarning,
+                          ],
                         ] as const
-                      ).map(([event, label]) => (
+                      ).map(([event, label, Icon]) => (
                         <button
                           key={event}
                           type="button"
-                          className="btn btn-sm btn-outline justify-start"
+                          className="btn btn-sm btn-ghost justify-start gap-2"
                           disabled={reviewBusy}
                           onClick={() => {
                             runReview(event, label);
                             closeActionsPopover();
                           }}
                         >
+                          <Icon className="size-4 shrink-0" aria-hidden />
                           {label}
                         </button>
                       ))}
                       {pendingReview ? (
                         <button
                           type="button"
-                          className="btn btn-sm btn-ghost text-error justify-start"
+                          className="btn btn-sm btn-ghost text-error justify-start gap-2"
                           disabled={discardInFlight}
                           onClick={() => {
                             runDiscardPending();
                             closeActionsPopover();
                           }}
                         >
+                          <Trash2 className="size-4 shrink-0" aria-hidden />
                           Discard pending
                         </button>
                       ) : null}
@@ -752,59 +772,71 @@ export function PullDetailPage({
                       </p>
                     ) : (
                       <div className="flex flex-col gap-1">
-                        {allowedMethods.map((m) => (
-                          <button
-                            key={m}
-                            type="button"
-                            className="btn btn-sm btn-primary btn-outline justify-start"
-                            disabled={
-                              mergeInFlight ||
-                              merging ||
-                              pr.mergeable === 'CONFLICTING'
-                            }
-                            title={MERGE_HINT[m]}
-                            onClick={() => {
-                              setMerging(true);
-                              commitMerge({
-                                variables: {
-                                  id: pr.id,
-                                  mergeMethod: m,
-                                },
-                                optimisticResponse: {
-                                  mergePullRequest: {
-                                    pullRequest: {
-                                      id: pr.id,
-                                      state: 'OPEN',
-                                      merged: false,
-                                      mergeable: pr.mergeable,
+                        {allowedMethods.map((m) => {
+                          const MergeIcon =
+                            m === 'MERGE'
+                              ? GitMerge
+                              : m === 'SQUASH'
+                                ? GitCommitHorizontal
+                                : GitBranch;
+                          return (
+                            <button
+                              key={m}
+                              type="button"
+                              className="btn btn-sm btn-ghost justify-start gap-2"
+                              disabled={
+                                mergeInFlight ||
+                                merging ||
+                                pr.mergeable === 'CONFLICTING'
+                              }
+                              title={MERGE_HINT[m]}
+                              onClick={() => {
+                                closeActionsPopover();
+                                setMerging(true);
+                                commitMerge({
+                                  variables: {
+                                    id: pr.id,
+                                    mergeMethod: m,
+                                  },
+                                  optimisticResponse: {
+                                    mergePullRequest: {
+                                      pullRequest: {
+                                        id: pr.id,
+                                        state: 'OPEN',
+                                        merged: false,
+                                        mergeable: pr.mergeable,
+                                      },
                                     },
                                   },
-                                },
-                                onCompleted: (res) => {
-                                  setMerging(false);
-                                  if (
-                                    res.mergePullRequest?.pullRequest?.merged
-                                  ) {
-                                    toast.info(
-                                      `Merged (${MERGE_SHORT[m]})`,
-                                    );
-                                  } else {
-                                    toast.info('Merge completed');
-                                  }
-                                  closeActionsPopover();
-                                },
-                                onError: (e) => {
-                                  setMerging(false);
-                                  toast.error('Merge failed', e.message);
-                                },
-                              });
-                            }}
-                          >
-                            {mergeInFlight || merging
-                              ? 'Merging…'
-                              : MERGE_SHORT[m]}
-                          </button>
-                        ))}
+                                  onCompleted: (res) => {
+                                    setMerging(false);
+                                    if (
+                                      res.mergePullRequest?.pullRequest?.merged
+                                    ) {
+                                      toast.info(
+                                        `Merged (${MERGE_SHORT[m]})`,
+                                      );
+                                    } else {
+                                      toast.info('Merge completed');
+                                    }
+                                  },
+                                  onError: (e) => {
+                                    setMerging(false);
+                                    toast.error('Merge failed', e.message);
+                                  },
+                                });
+                              }}
+                            >
+                              <MergeIcon
+                                className="size-4 shrink-0"
+                                aria-hidden
+                              />
+                              {mergeInFlight || merging
+                                ? 'Merging…'
+                                : MERGE_SHORT[m]}
+                            </button>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
@@ -812,9 +844,10 @@ export function PullDetailPage({
                   <div className="border-t border-base-300 pt-3">
                     <button
                       type="button"
-                      className="btn btn-sm btn-outline w-full justify-start gap-2"
+                      className="btn btn-sm btn-ghost w-full justify-start gap-2"
                       disabled={closeInFlight}
                       onClick={() => {
+                        closeActionsPopover();
                         commitClose({
                           variables: { id: pr.id },
                           optimisticResponse: {
@@ -826,7 +859,6 @@ export function PullDetailPage({
                               },
                             },
                           },
-                          onCompleted: () => closeActionsPopover(),
                           onError: (e) =>
                             toast.error('Close failed', e.message),
                         });
