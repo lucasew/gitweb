@@ -1,7 +1,14 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type KeyboardEvent,
+  type MouseEvent,
+} from 'react';
 import { DiffFile, DiffView, DiffModeEnum, SplitSide } from '@git-diff-view/react';
 import '@git-diff-view/react/styles/diff-view-pure.css';
-import { graphql, useMutation } from 'react-relay';
+import { graphql, useLazyLoadQuery, useMutation } from 'react-relay';
 import { Link } from '@tanstack/react-router';
 import { fetchPullFiles, type RestPullFile } from '@/lib/rest';
 import { LoadingBlock } from '@/components/LoadingBlock';
@@ -14,11 +21,15 @@ import {
 import { ExternalLink } from '@/components/ExternalLink';
 import { useToast } from '@/lib/toast';
 import type { PullFilesDiffThreadMutation } from './__generated__/PullFilesDiffThreadMutation.graphql';
+import type { PullFilesDiffViewedQuery } from './__generated__/PullFilesDiffViewedQuery.graphql';
+import type { PullFilesDiffMarkViewedMutation } from './__generated__/PullFilesDiffMarkViewedMutation.graphql';
+import type { PullFilesDiffUnmarkViewedMutation } from './__generated__/PullFilesDiffUnmarkViewedMutation.graphql';
 import { cn } from '@/lib/cls';
 import { GithubMarkdown } from '@/components/GithubMarkdown';
 import { normalizeGithubPatch, patchFileNames } from '@/lib/githubPatch';
 import { langFromPath } from '@/lib/diffLang';
 import { githubBlobUrl } from '@/lib/permalinks';
+import { STORE_AND_NETWORK } from '@/lib/relayPolicy';
 
 export type ReviewThreadSummary = {
   id: string;
@@ -82,6 +93,54 @@ const threadMutation = graphql`
             }
           }
         }
+      }
+    }
+  }
+`;
+
+/** GitHub “Viewed” checklist — same state as github.com PR Files */
+const viewedQuery = graphql`
+  query PullFilesDiffViewedQuery(
+    $owner: String!
+    $name: String!
+    $number: Int!
+  ) {
+    repository(owner: $owner, name: $name) {
+      pullRequest(number: $number) {
+        id
+        files(first: 100) {
+          totalCount
+          nodes {
+            path
+            viewerViewedState
+          }
+        }
+      }
+    }
+  }
+`;
+
+const markViewedMutation = graphql`
+  mutation PullFilesDiffMarkViewedMutation(
+    $pullRequestId: ID!
+    $path: String!
+  ) {
+    markFileAsViewed(input: { pullRequestId: $pullRequestId, path: $path }) {
+      pullRequest {
+        id
+      }
+    }
+  }
+`;
+
+const unmarkViewedMutation = graphql`
+  mutation PullFilesDiffUnmarkViewedMutation(
+    $pullRequestId: ID!
+    $path: String!
+  ) {
+    unmarkFileAsViewed(input: { pullRequestId: $pullRequestId, path: $path }) {
+      pullRequest {
+        id
       }
     }
   }
@@ -240,7 +299,8 @@ function SafeDiffView({
       extendData={extendData}
       diffViewMode={mode === 'split' ? DiffModeEnum.Split : DiffModeEnum.Unified}
       diffViewTheme={theme}
-      diffViewWrap
+      /* no wrap: long lines use library overflow-x-auto scroll containers */
+      diffViewWrap={false}
       diffViewHighlight
       diffViewAddWidget={canReview}
       renderExtendLine={({ data: threadList }) => (
@@ -297,6 +357,11 @@ function FileDiff({
   headRef,
   threads,
   onThreadsChanged,
+  expanded,
+  viewed,
+  onToggleExpand,
+  onToggleViewed,
+  viewedBusy,
 }: {
   file: RestPullFile;
   mode: 'unified' | 'split';
@@ -307,6 +372,11 @@ function FileDiff({
   headRef: string;
   threads: ReviewThreadSummary[];
   onThreadsChanged?: () => void;
+  expanded: boolean;
+  viewed: boolean;
+  onToggleExpand: () => void;
+  onToggleViewed: (next: boolean) => void;
+  viewedBusy: boolean;
 }) {
   const fileThreads = threads.filter((t) => t.path === file.filename);
 
@@ -323,26 +393,19 @@ function FileDiff({
     return { oldFile, newFile };
   }, [fileThreads]);
 
-  if (!file.patch) {
-    return (
-      <div className="alert alert-info text-sm">
-        No patch for <code className="text-xs">{file.filename}</code> (binary or
-        too large).
-      </div>
-    );
-  }
-
   const names = patchFileNames(
     file.filename,
     file.previous_filename,
     file.status,
   );
-  const hunks = normalizeGithubPatch(
-    file.patch,
-    file.filename,
-    file.previous_filename,
-    file.status,
-  );
+  const hunks = file.patch
+    ? normalizeGithubPatch(
+        file.patch,
+        file.filename,
+        file.previous_filename,
+        file.status,
+      )
+    : [];
 
   const blobParams = {
     owner,
@@ -351,14 +414,38 @@ function FileDiff({
     _splat: file.filename,
   } as const;
 
+  // Ignore clicks on links/controls so collapse does not steal navigation
+  const onTitleActivate = (e: MouseEvent | KeyboardEvent) => {
+    const t = e.target as HTMLElement | null;
+    if (t?.closest('a, button, input, label, select, textarea')) return;
+    if ('key' in e && e.key !== 'Enter' && e.key !== ' ') return;
+    if ('key' in e) e.preventDefault();
+    onToggleExpand();
+  };
+
+  // daisyUI collapse (controlled): collapse-arrow + collapse-open/close
   return (
-    <div className="border border-base-300 rounded-box overflow-hidden w-full min-w-0">
-      <div className="px-3 py-2 bg-base-200 border-b border-base-300 flex flex-wrap gap-2 items-center sticky top-0 z-10">
+    <div
+      className={cn(
+        'ghweb-diff-collapse collapse collapse-arrow border border-base-300 bg-base-100 rounded-box w-full min-w-0 max-w-full',
+        expanded ? 'collapse-open' : 'collapse-close',
+        viewed && !expanded && 'opacity-80',
+      )}
+    >
+      <div
+        role="button"
+        tabIndex={0}
+        className="collapse-title min-h-0 py-2 pe-10 bg-base-200 sticky top-0 z-10 flex flex-nowrap items-center gap-2 min-w-0 overflow-hidden"
+        aria-expanded={expanded}
+        onClick={onTitleActivate}
+        onKeyDown={onTitleActivate}
+      >
         <Link
           to="/$owner/$name/blob/$ref/$"
           params={blobParams}
-          className="font-mono text-sm break-all min-w-0 link link-hover"
+          className="font-mono text-sm min-w-0 flex-1 truncate link link-hover"
           title={`View ${file.filename} at PR head`}
+          onClick={(e) => e.stopPropagation()}
         >
           {file.filename}
         </Link>
@@ -366,35 +453,61 @@ function FileDiff({
           className="btn btn-ghost btn-xs shrink-0 opacity-70"
           href={githubBlobUrl(owner, name, headRef, file.filename)}
           title="Open on GitHub"
+          onClick={(e) => e.stopPropagation()}
         >
           ↗
         </ExternalLink>
-        <span className="text-success text-xs shrink-0">+{file.additions}</span>
-        <span className="text-error text-xs shrink-0">-{file.deletions}</span>
-        {fileThreads.length ? (
-          <span className="badge badge-sm badge-ghost shrink-0">
-            {fileThreads.length} thread{fileThreads.length === 1 ? '' : 's'}
-          </span>
-        ) : null}
+        <div className="flex items-center gap-2 shrink-0 text-xs tabular-nums">
+          <span className="text-success">+{file.additions}</span>
+          <span className="text-error">-{file.deletions}</span>
+          {fileThreads.length ? (
+            <span className="badge badge-sm badge-ghost">
+              {fileThreads.length} thread{fileThreads.length === 1 ? '' : 's'}
+            </span>
+          ) : null}
+          <label
+            className="label cursor-pointer gap-1.5 py-0 px-1"
+            title="Mark file as viewed (synced with GitHub)"
+          >
+            <span className="label-text text-xs opacity-70">Viewed</span>
+            <input
+              type="checkbox"
+              className="checkbox checkbox-xs checkbox-success"
+              checked={viewed}
+              disabled={viewedBusy}
+              onChange={(e) => onToggleViewed(e.target.checked)}
+            />
+          </label>
+        </div>
       </div>
-      <div className="w-full min-w-0 overflow-x-auto">
-        {hunks.length === 0 ? (
-          <div className="alert alert-warning text-sm m-2">
-            Could not parse unified diff for this file (empty or non-text patch).
+      <div className="collapse-content px-0 min-w-0 max-w-full">
+        {expanded ? (
+          <div className="ghweb-diff-scroll w-full min-w-0 max-w-full">
+            {!file.patch ? (
+              <div className="alert alert-info text-sm m-2">
+                No patch for <code className="text-xs">{file.filename}</code>{' '}
+                (binary or too large).
+              </div>
+            ) : hunks.length === 0 ? (
+              <div className="alert alert-warning text-sm m-2">
+                Could not parse unified diff for this file (empty or non-text
+                patch).
+              </div>
+            ) : (
+              <SafeDiffView
+                hunks={hunks}
+                oldName={names.oldName}
+                newName={names.newName}
+                mode={mode}
+                canReview={canReview}
+                extendData={extendData}
+                path={file.filename}
+                pullRequestId={pullRequestId}
+                onThreadsChanged={onThreadsChanged}
+              />
+            )}
           </div>
-        ) : (
-          <SafeDiffView
-            hunks={hunks}
-            oldName={names.oldName}
-            newName={names.newName}
-            mode={mode}
-            canReview={canReview}
-            extendData={extendData}
-            path={file.filename}
-            pullRequestId={pullRequestId}
-            onThreadsChanged={onThreadsChanged}
-          />
-        )}
+        ) : null}
       </div>
     </div>
   );
@@ -410,12 +523,95 @@ export function PullFilesDiff({
   threads,
   onThreadsChanged,
 }: Props) {
+  const toast = useToast();
   const [files, setFiles] = useState<RestPullFile[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<'unified' | 'split'>('unified');
   const [openPath, setOpenPath] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(true);
+  /** path → expanded; default = !viewed (GitHub: viewed files start collapsed) */
+  const [expandOverride, setExpandOverride] = useState<
+    Record<string, boolean>
+  >({});
+  /** path → viewed optimistic overlay on top of GQL */
+  const [viewedOverride, setViewedOverride] = useState<
+    Record<string, boolean>
+  >({});
+  const [viewedBusyPath, setViewedBusyPath] = useState<string | null>(null);
+
+  const viewedData = useLazyLoadQuery<PullFilesDiffViewedQuery>(
+    viewedQuery,
+    { owner, name, number },
+    STORE_AND_NETWORK,
+  );
+
+  const gqlViewed = useMemo(() => {
+    const map: Record<string, boolean> = {};
+    for (const n of viewedData.repository?.pullRequest?.files?.nodes ?? []) {
+      if (n?.path) map[n.path] = n.viewerViewedState === 'VIEWED';
+    }
+    return map;
+  }, [viewedData]);
+
+  const isViewed = useCallback(
+    (path: string) =>
+      path in viewedOverride ? viewedOverride[path]! : Boolean(gqlViewed[path]),
+    [gqlViewed, viewedOverride],
+  );
+
+  const isExpanded = useCallback(
+    (path: string) =>
+      path in expandOverride ? expandOverride[path]! : !isViewed(path),
+    [expandOverride, isViewed],
+  );
+
+  const [commitMarkViewed] =
+    useMutation<PullFilesDiffMarkViewedMutation>(markViewedMutation);
+  const [commitUnmarkViewed] =
+    useMutation<PullFilesDiffUnmarkViewedMutation>(unmarkViewedMutation);
+
+  const setFileViewed = useCallback(
+    (path: string, next: boolean) => {
+      setViewedOverride((prev) => ({ ...prev, [path]: next }));
+      // GitHub collapses on view, expands on unview
+      setExpandOverride((prev) => ({ ...prev, [path]: !next }));
+      setViewedBusyPath(path);
+      const vars = { pullRequestId, path };
+      if (next) {
+        commitMarkViewed({
+          variables: vars,
+          onCompleted: () => setViewedBusyPath(null),
+          onError: (e) => {
+            setViewedOverride((prev) => ({ ...prev, [path]: false }));
+            setViewedBusyPath(null);
+            toast.error('Could not mark viewed', e.message);
+          },
+        });
+      } else {
+        commitUnmarkViewed({
+          variables: vars,
+          onCompleted: () => setViewedBusyPath(null),
+          onError: (e) => {
+            setViewedOverride((prev) => ({ ...prev, [path]: true }));
+            setViewedBusyPath(null);
+            toast.error('Could not unmark viewed', e.message);
+          },
+        });
+      }
+    },
+    [commitMarkViewed, commitUnmarkViewed, pullRequestId, toast],
+  );
+
+  const toggleExpand = useCallback(
+    (path: string) => {
+      setExpandOverride((prev) => ({
+        ...prev,
+        [path]: !(path in prev ? prev[path]! : !isViewed(path)),
+      }));
+    },
+    [isViewed],
+  );
 
   const load = useCallback(() => {
     setError(null);
@@ -455,6 +651,8 @@ export function PullFilesDiff({
     ? files
     : files.filter((f) => f.filename === openPath);
 
+  const viewedCount = files.filter((f) => isViewed(f.filename)).length;
+
   return (
     <div
       className={cn(
@@ -462,7 +660,7 @@ export function PullFilesDiff({
         loading && 'opacity-80',
       )}
     >
-      <aside className="lg:w-64 shrink-0 border border-base-300 rounded-box bg-base-200/40 max-h-[40vh] lg:max-h-[calc(100vh-8rem)] overflow-auto lg:sticky lg:top-2">
+      <aside className="w-full lg:w-72 shrink-0 border border-base-300 rounded-box bg-base-200/40 max-h-[40vh] lg:max-h-[calc(100vh-8rem)] overflow-auto lg:sticky lg:top-2">
         <div className="p-2 flex flex-wrap gap-1 border-b border-base-300 sticky top-0 bg-base-200 z-10">
           <div className="join">
             <button
@@ -487,40 +685,76 @@ export function PullFilesDiff({
           >
             {showAll ? 'All files' : 'One file'}
           </button>
+          <div
+            className="w-full text-xs opacity-60 tabular-nums"
+            title="Synced with GitHub viewerViewedState"
+          >
+            {viewedCount}/{files.length} viewed
+          </div>
         </div>
-        <ul className="menu menu-sm p-1">
+        {/* daisyUI list — full-width rows (menu is fit-content) */}
+        <ul className="list w-full rounded-none bg-transparent py-1">
           {files.map((f) => {
             const n = threads.filter((t) => t.path === f.filename).length;
+            const viewed = isViewed(f.filename);
             return (
-              <li key={f.filename}>
+              <li
+                key={f.filename}
+                className={cn(
+                  'list-row py-1.5 px-2 rounded-field',
+                  !showAll && openPath === f.filename && 'bg-base-300',
+                  viewed && 'opacity-70',
+                )}
+              >
+                <input
+                  type="checkbox"
+                  className="checkbox checkbox-xs checkbox-success shrink-0 self-center"
+                  checked={viewed}
+                  disabled={viewedBusyPath === f.filename}
+                  title={viewed ? 'Mark as unviewed' : 'Mark as viewed'}
+                  aria-label={
+                    viewed
+                      ? `Mark ${f.filename} unviewed`
+                      : `Mark ${f.filename} viewed`
+                  }
+                  onChange={(e) => setFileViewed(f.filename, e.target.checked)}
+                />
                 <button
                   type="button"
-                  className={cn(
-                    'font-mono text-xs',
-                    !showAll && openPath === f.filename && 'active',
-                  )}
+                  className="list-col-grow font-mono text-xs truncate min-w-0 text-start bg-transparent border-0 p-0 cursor-pointer hover:underline"
                   onClick={() => {
                     setOpenPath(f.filename);
+                    if (!isExpanded(f.filename)) {
+                      setExpandOverride((prev) => ({
+                        ...prev,
+                        [f.filename]: true,
+                      }));
+                    }
                     if (showAll) {
                       const el = document.querySelector(
                         `[data-diff-path="${CSS.escape(f.filename)}"]`,
                       );
-                      el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      el?.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start',
+                      });
                     }
                   }}
                 >
-                  <span className="truncate">{f.filename}</span>
+                  {f.filename}
+                </button>
+                <span className="flex items-center gap-1 shrink-0 self-center tabular-nums text-xs">
                   <span className="text-success">+{f.additions}</span>
                   <span className="text-error">-{f.deletions}</span>
                   {n ? <span className="badge badge-xs">{n}</span> : null}
-                </button>
+                </span>
               </li>
             );
           })}
         </ul>
         <div className="p-2 text-xs opacity-60 border-t border-base-300">
           {canReview
-            ? 'Click + on a line to comment on that hunk.'
+            ? 'Viewed checklist syncs with GitHub. Click + on a line to comment.'
             : 'Read-only: open PR to leave line comments.'}{' '}
           <ExternalLink
             className="link"
@@ -531,12 +765,12 @@ export function PullFilesDiff({
         </div>
       </aside>
 
-      <div className="flex-1 min-w-0 space-y-4 w-full">
+      <div className="flex-1 min-w-0 max-w-full space-y-4 w-full overflow-x-hidden">
         {visible.map((f) => (
           <div
             key={f.filename}
             data-diff-path={f.filename}
-            className="w-full"
+            className="w-full min-w-0 max-w-full"
           >
             <FileDiff
               file={f}
@@ -548,6 +782,11 @@ export function PullFilesDiff({
               headRef={headRef}
               threads={threads}
               onThreadsChanged={onThreadsChanged}
+              expanded={isExpanded(f.filename)}
+              viewed={isViewed(f.filename)}
+              onToggleExpand={() => toggleExpand(f.filename)}
+              onToggleViewed={(next) => setFileViewed(f.filename, next)}
+              viewedBusy={viewedBusyPath === f.filename}
             />
           </div>
         ))}

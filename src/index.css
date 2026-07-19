@@ -14,6 +14,28 @@ html[data-theme='light'] {
 }
 
 /*
+ * daisyUI collapse-content uses overflow:clip, which eats nested horizontal
+ * scrollports from @git-diff-view. Force a real scroll chain when open.
+ */
+.ghweb-diff-collapse.collapse-open > .collapse-content {
+  overflow-x: auto !important;
+  overflow-y: visible !important;
+  min-width: 0;
+  max-width: 100%;
+}
+.ghweb-diff-scroll {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+}
+.ghweb-diff-scroll .diff-tailwindcss-wrapper,
+.ghweb-diff-scroll .diff-table-scroll-container {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+/*
  * @git-diff-view sets `.diff-line-widget-wrapper * { color: initial }` which
  * forces canvastext (often black) and fights daisyUI when OS is light but the
  * app is dark (or the reverse). Re-bind widgets + form controls to theme tokens.

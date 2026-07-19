@@ -128,18 +128,29 @@ export function TopBar({
           ) : null}
         </nav>
 
-        <div className="flex-1 flex justify-center px-1 min-w-0">
+        <div className="flex-1 flex justify-end md:justify-center px-1 min-w-0">
+          {/* Narrow: icon-only; md+: full Jump… bar with ⌘K */}
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm btn-square md:hidden"
+            onClick={onOpenPalette}
+            aria-label="Open command palette (⌘K)"
+            title="Jump… (⌘K)"
+          >
+            <Search className="size-4" aria-hidden />
+          </button>
           <button
             type="button"
             className={cn(
               'btn btn-sm btn-ghost border border-base-300 bg-base-100',
-              'w-full max-w-md justify-start gap-2 font-normal text-base-content/60',
+              'hidden md:inline-flex w-full max-w-md justify-start gap-2 font-normal text-base-content/60',
             )}
             onClick={onOpenPalette}
+            aria-label="Open command palette (⌘K)"
           >
-            <Search className="size-4 shrink-0" />
+            <Search className="size-4 shrink-0" aria-hidden />
             <span className="truncate">Jump… /code /issues /prs /actions</span>
-            <kbd className="kbd kbd-sm ms-auto hidden sm:inline-flex">⌘K</kbd>
+            <kbd className="kbd kbd-sm ms-auto">⌘K</kbd>
           </button>
         </div>
 

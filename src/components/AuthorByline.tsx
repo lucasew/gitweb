@@ -59,22 +59,19 @@ export function AuthorByline({
         </div>
       </div>
       <div className={cn('min-w-0 flex-1 leading-tight', text)}>
-        <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0 min-w-0">
-          {name ? (
-            <span className="font-medium truncate min-w-0 max-w-[min(100%,12ch)] sm:max-w-[min(100%,20ch)]">
-              {name}
-            </span>
-          ) : null}
-          <span
-            className={cn(
-              'truncate min-w-0',
-              name ? 'opacity-60' : 'font-medium',
-            )}
-          >
-            @{login}
-          </span>
+        <div
+          className="truncate min-w-0"
+          title={name ? `${name} (@${login})` : `@${login}`}
+        >
+          {name ? <span className="font-medium">{name}</span> : null}
+          {name ? ' ' : null}
+          <span className={name ? 'opacity-60' : 'font-medium'}>@{login}</span>
         </div>
-        {meta ? <div className="opacity-50 truncate min-w-0">{meta}</div> : null}
+        {meta ? (
+          <div className="opacity-50 truncate min-w-0" title={meta}>
+            {meta}
+          </div>
+        ) : null}
       </div>
     </div>
   );
