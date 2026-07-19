@@ -90,6 +90,21 @@ Auth model assumes a user who can create a PAT (same mental model as `gh auth to
 
 **Not in scope (gap stubs or omit):** org/repo Actions secrets & variables UI, self-hosted runners admin, usage billing, artifact browser, true log multiplexing/streaming APIs.
 
+### 5.5 Commits & compare (GitHub-like)
+
+**Intent:** Browse ref history, open a SHA, and compare two refs — same diff honesty and UI family as PR **Files**.
+
+| Decision | Choice |
+|----------|--------|
+| Job | **Browse history** on a ref; deep-link any commit; **compare** `base...head` |
+| List | `/{owner}/{repo}/commits/{ref}` — dense log (author, headline, short SHA, date); **Load more** (cursor); no author/path filters in v1 |
+| Commit | `/{owner}/{repo}/commit/{sha}` — metadata + **file list + diffs** (vs first parent; multi-parent: first parent, note later) |
+| Compare | `/{owner}/{repo}/compare/{base}...{head}` (refs or SHAs) — file list + diffs |
+| Nav | **No** fifth TopBar section icon |
+| Entry | Repo home, tree/blob chrome, breadcrumb, ⌘K `/commits`, PR timeline SHA links |
+| API | **GraphQL** for history list + commit header; **REST** for commit files/patches and compare (hybrid, like PR files) |
+| Diff UI | **Shared** with PR files (`@git-diff-view`, patch normalize, large/binary/missing → message + Open on GitHub) |
+
 ### 5.3 Power triage (issues & PRs)
 
 Ship high-leverage writes the API supports correctly, including as applicable:
@@ -125,6 +140,7 @@ Use **github.com-compatible path shapes** for core entities:
 - `/{owner}/{repo}/pull/:number` (singular `pull`, GitHub-style) — conversation  
 - `/{owner}/{repo}/pull/:number/files` — Files / diffs tab (deep-linked)
 - `/{owner}/{repo}/tree/:ref/*`, `/{owner}/{repo}/blob/:ref/*`
+- `/{owner}/{repo}/commits/:ref`, `/{owner}/{repo}/commit/:sha`, `/{owner}/{repo}/compare/:base...:head`
 - User/org routes where we mirror them
 
 ### 6.2 Intentional improvements
@@ -535,6 +551,8 @@ Decisions locked in the 2026-07 grill session:
 21. Status badge colors: SPEC §13.1 (changes requested = solid warning; pending = outline warning; merging = info; closed = error; approved/open = success; draft/commented = ghost; merged = purple only)  
 22. Product name: **ghweb** (formerly gitweb); storage keys `ghweb.*` with one-shot migrate from `gitweb.*`  
 23. Buttons: **no `btn-outline`** — ghost for secondary/toolbar/menus; solid for primary/danger/success (§13.2). Badge outline for pending only.  
+25. Commits/compare (§5.5): list + commit detail + `base...head` compare; GQL list / REST patches; shared PR-style diffs; no TopBar Commits icon  
+
 
 
 

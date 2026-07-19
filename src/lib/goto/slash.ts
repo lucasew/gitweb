@@ -1,7 +1,14 @@
 /** Normalized slash commands: /code, /issues, /prs, /actions, /search [rest] */
 
 export type SlashCommand = {
-  cmd: 'code' | 'issues' | 'prs' | 'actions' | 'search' | 'switch';
+  cmd:
+    | 'code'
+    | 'issues'
+    | 'prs'
+    | 'actions'
+    | 'commits'
+    | 'search'
+    | 'switch';
   rest: string;
 };
 
@@ -17,6 +24,10 @@ export const ALIASES: Record<string, SlashCommand['cmd']> = {
   action: 'actions',
   workflows: 'actions',
   ci: 'actions',
+  commits: 'commits',
+  commit: 'commits',
+  history: 'commits',
+  log: 'commits',
   search: 'search',
   s: 'search',
   switch: 'switch',
@@ -38,7 +49,7 @@ export function parseSlashCommand(q: string): SlashCommand | null {
 
 export function slashMatches(
   slash: SlashCommand,
-  section: 'code' | 'issues' | 'prs' | 'actions',
+  section: 'code' | 'issues' | 'prs' | 'actions' | 'commits',
 ): boolean {
   return slash.cmd === section;
 }

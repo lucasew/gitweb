@@ -64,6 +64,19 @@ function sectionCandidates(
       priority: priority + 3,
       action: { kind: 'navigate', to: `${base}/actions` },
     },
+    {
+      id: `commits-${here}`,
+      label: `Commits · ${here}`,
+      hint: '/commits',
+      value: `commits commit history log ${here} /commits`,
+      group,
+      icon: 'code',
+      priority: priority + 4,
+      action: {
+        kind: 'navigate',
+        to: `${base}/commits/HEAD`,
+      },
+    },
   ];
 }
 
@@ -78,7 +91,10 @@ export const hereSectionProvider: GotoProvider = (q, ctx) => {
     20,
   );
   if (slash) {
-    if (slash.cmd === 'search') return [];
+    if (slash.cmd === 'search' || slash.cmd === 'switch') return [];
+    if (slash.cmd === 'commits') {
+      return all.filter((c) => c.hint === '/commits');
+    }
     return all.filter((c) => {
       const section =
         c.icon === 'code' ||
@@ -132,6 +148,9 @@ export const jumpSectionProvider: GotoProvider = (q, ctx) => {
   const repos = filterRepos(ctx.recent, ctx.repo, slash.rest);
   return repos.flatMap((r) => {
     const base = sectionCandidates(r.owner, r.name, GROUP.jump, 30);
+    if (slash.cmd === 'commits') {
+      return base.filter((c) => c.hint === '/commits');
+    }
     return base.filter((c) => {
       const section =
         c.icon === 'code' ||

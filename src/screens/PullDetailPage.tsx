@@ -1193,13 +1193,14 @@ export function PullDetailPage({
                           }}
                           meta={new Date(c.committedDate).toLocaleString()}
                         />
-                        <ExternalLink
-                          href={item.url || c.url}
+                        <Link
+                          to="/$owner/$name/commit/$sha"
+                          params={{ owner, name, sha: c.oid }}
                           className="font-mono text-xs link link-hover shrink-0 tabular-nums"
                           title={c.oid}
                         >
                           {c.abbreviatedOid}
-                        </ExternalLink>
+                        </Link>
                       </div>
                       <div className="ps-6 min-w-0 text-sm font-medium break-words">
                         {c.messageHeadline}

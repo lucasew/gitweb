@@ -315,3 +315,116 @@ export function githubActionsJobLogsApiUrl(
 export function githubActionsHomeUrl(owner: string, repo: string): string {
   return `https://github.com/${owner}/${repo}/actions`;
 }
+
+function restHeaders(): HeadersInit {
+  const token = getToken();
+  if (!token) throw new Error('Not signed in');
+  return {
+    Authorization: `Bearer ${token}`,
+    Accept: 'application/vnd.github+json',
+    'X-GitHub-Api-Version': '2022-11-28',
+  };
+}
+
+/** Map GitHub commit/compare file objects onto RestPullFile (shared diff UI). */
+function mapRestDiffFile(f: {
+  filename?: string;
+  status?: string;
+  additions?: number;
+  deletions?: number;
+  changes?: number;
+  patch?: string;
+  previous_filename?: string;
+}): RestPullFile {
+  return {
+    filename: f.filename ?? '',
+    status: f.status ?? 'modified',
+    additions: f.additions ?? 0,
+    deletions: f.deletions ?? 0,
+    changes: f.changes ?? 0,
+    patch: f.patch,
+    previous_filename: f.previous_filename,
+  };
+}
+
+export type RestCommitDetail = {
+  sha: string;
+  html_url: string;
+  commit: {
+    message: string;
+    author: { name?: string; email?: string; date?: string } | null;
+    committer: { name?: string; email?: string; date?: string } | null;
+  };
+  author: {
+    login?: string;
+    avatar_url?: string;
+  } | null;
+  committer: {
+    login?: string;
+    avatar_url?: string;
+  } | null;
+  parents: Array<{ sha: string; html_url?: string }>;
+  files?: RestPullFile[];
+  stats?: { additions: number; deletions: number; total: number };
+};
+
+/** Single commit + file patches (same honesty as PR files for large/binary). */
+export async function fetchCommit(
+  owner: string,
+  repo: string,
+  ref: string,
+): Promise<RestCommitDetail> {
+  const res = await fetch(
+    `${apiRoot()}/repos/${owner}/${repo}/commits/${encodeURIComponent(ref)}`,
+    { headers: restHeaders() },
+  );
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`REST commit ${res.status}: ${body.slice(0, 400)}`);
+  }
+  const raw = (await res.json()) as RestCommitDetail & {
+    files?: Array<Parameters<typeof mapRestDiffFile>[0]>;
+  };
+  return {
+    ...raw,
+    files: (raw.files ?? []).map(mapRestDiffFile),
+  };
+}
+
+export type RestCompareResult = {
+  status: string;
+  ahead_by: number;
+  behind_by: number;
+  total_commits: number;
+  html_url: string;
+  base_commit: { sha: string };
+  merge_base_commit: { sha: string };
+  commits: Array<{
+    sha: string;
+    html_url: string;
+    commit: { message: string; author?: { name?: string; date?: string } | null };
+    author?: { login?: string; avatar_url?: string } | null;
+  }>;
+  files?: RestPullFile[];
+};
+
+/** Compare base...head (GitHub three-dot). */
+export async function fetchCompare(
+  owner: string,
+  repo: string,
+  base: string,
+  head: string,
+): Promise<RestCompareResult> {
+  const res = await fetch(
+    `${apiRoot()}/repos/${owner}/${repo}/compare/${encodeURIComponent(base)}...${encodeURIComponent(head)}`,
+    { headers: restHeaders() },
+  );
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`REST compare ${res.status}: ${body.slice(0, 400)}`);
+  }
+  const raw = (await res.json()) as RestCompareResult & {
+    files?: Array<Parameters<typeof mapRestDiffFile>[0]>;
+  };
+  return { ...raw, files: (raw.files ?? []).map(mapRestDiffFile) };
+}

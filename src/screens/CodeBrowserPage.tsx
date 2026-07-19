@@ -125,6 +125,13 @@ export function CodeBrowserPage({ owner, name, refName, path, mode }: Props) {
             refName={refName}
             path={path}
           />
+          <Link
+            to="/$owner/$name/commits/$ref"
+            params={{ owner, name, ref: refName }}
+            className="btn btn-xs btn-ghost shrink-0"
+          >
+            Commits
+          </Link>
           <ExternalLink className="btn btn-xs btn-ghost shrink-0" href={ghBlob}>
             GitHub
           </ExternalLink>
@@ -213,6 +220,13 @@ export function CodeBrowserPage({ owner, name, refName, path, mode }: Props) {
             path={path}
             isBlob
           />
+          <Link
+            to="/$owner/$name/commits/$ref"
+            params={{ owner, name, ref: refName }}
+            className="btn btn-xs btn-ghost shrink-0"
+          >
+            Commits
+          </Link>
           <ExternalLink className="btn btn-xs btn-ghost shrink-0" href={ghBlob}>
             GitHub
           </ExternalLink>

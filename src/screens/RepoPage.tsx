@@ -1,7 +1,12 @@
 import { graphql, useLazyLoadQuery } from 'react-relay';
 import { STORE_AND_NETWORK } from '@/lib/relayPolicy';
 import { Link } from '@tanstack/react-router';
-import { ExternalLink as ExternalLinkIcon, GitFork, Star } from 'lucide-react';
+import {
+  ExternalLink as ExternalLinkIcon,
+  GitCommitHorizontal,
+  GitFork,
+  Star,
+} from 'lucide-react';
 import type { RepoPageQuery } from './__generated__/RepoPageQuery.graphql';
 import { ExternalLink } from '@/components/ExternalLink';
 import { GithubMarkdown } from '@/components/GithubMarkdown';
@@ -116,6 +121,15 @@ export function RepoPage({ owner, name }: Props) {
                 <span className="font-normal">{repo.primaryLanguage.name}</span>
               </span>
             ) : null}
+            <Link
+              to="/$owner/$name/commits/$ref"
+              params={{ owner, name, ref: branch }}
+              className="inline-flex items-center gap-1 link link-hover opacity-100 font-normal"
+              title={`Commits on ${branch}`}
+            >
+              <GitCommitHorizontal className="size-4 shrink-0" aria-hidden />
+              <span className="hidden sm:inline">Commits</span>
+            </Link>
             <ExternalLink
               href={repo.url}
               className="inline-flex items-center gap-1 link link-hover opacity-100"

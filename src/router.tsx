@@ -53,6 +53,21 @@ const ActionsRunPage = lazy(() =>
     default: m.ActionsRunPage,
   })),
 );
+const CommitsListPage = lazy(() =>
+  import('@/screens/CommitsListPage').then((m) => ({
+    default: m.CommitsListPage,
+  })),
+);
+const CommitDetailPage = lazy(() =>
+  import('@/screens/CommitDetailPage').then((m) => ({
+    default: m.CommitDetailPage,
+  })),
+);
+const ComparePage = lazy(() =>
+  import('@/screens/ComparePage').then((m) => ({
+    default: m.ComparePage,
+  })),
+);
 const SearchPage = lazy(() =>
   import('@/screens/SearchPage').then((m) => ({ default: m.SearchPage })),
 );
@@ -386,6 +401,59 @@ const actionsRunRoute = createRoute({
   },
 });
 
+const commitsListRoute = createRoute({
+  getParentRoute: () => repoLayoutRoute,
+  path: '/commits/$ref',
+  component: function CommitsListRoute() {
+    const { owner, name } = repoLayoutRoute.useParams();
+    const { ref } = commitsListRoute.useParams();
+    return (
+      <Suspend>
+        <CommitsListPage owner={owner} name={name} refName={ref} />
+      </Suspend>
+    );
+  },
+});
+
+const commitDetailRoute = createRoute({
+  getParentRoute: () => repoLayoutRoute,
+  path: '/commit/$sha',
+  component: function CommitDetailRoute() {
+    const { owner, name } = repoLayoutRoute.useParams();
+    const { sha } = commitDetailRoute.useParams();
+    return (
+      <Suspend>
+        <CommitDetailPage owner={owner} name={name} sha={sha} />
+      </Suspend>
+    );
+  },
+});
+
+/** GitHub-like compare: /compare/base...head (splat holds full range) */
+const compareRoute = createRoute({
+  getParentRoute: () => repoLayoutRoute,
+  path: '/compare/$',
+  component: function CompareRoute() {
+    const { owner, name } = repoLayoutRoute.useParams();
+    const range = compareRoute.useParams()._splat ?? '';
+    const sep = range.indexOf('...');
+    const base = sep >= 0 ? range.slice(0, sep) : range;
+    const head = sep >= 0 ? range.slice(sep + 3) : '';
+    if (!base || !head) {
+      return (
+        <div className="p-4 alert alert-warning text-sm">
+          Compare needs <code>base...head</code> in the path.
+        </div>
+      );
+    }
+    return (
+      <Suspend>
+        <ComparePage owner={owner} name={name} base={base} head={head} />
+      </Suspend>
+    );
+  },
+});
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   searchRoute,
@@ -395,6 +463,9 @@ const routeTree = rootRoute.addChildren([
     treeRootRoute,
     treeRoute,
     blobRoute,
+    commitsListRoute,
+    commitDetailRoute,
+    compareRoute,
     issuesRoute,
     issueDetailRoute,
     pullsRoute,
