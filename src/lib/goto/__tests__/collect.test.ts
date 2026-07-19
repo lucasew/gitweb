@@ -29,6 +29,20 @@ describe('section providers', () => {
     expect(items.some((i) => i.hint === '/issues')).toBe(true);
   });
 
+  it('isolates /code from commits (commits is its own section icon)', () => {
+    const here = ctx({
+      pathname: '/o/r',
+      repo: { owner: 'o', name: 'r' },
+    });
+    const code = collectGotoCandidates('/code', here);
+    expect(code.map((i) => i.hint)).toEqual(['/code']);
+    expect(code.every((i) => i.icon === 'code')).toBe(true);
+
+    const commits = collectGotoCandidates('/commits', here);
+    expect(commits.map((i) => i.hint)).toEqual(['/commits']);
+    expect(commits.every((i) => i.icon === 'commits')).toBe(true);
+  });
+
   it('does not invent path items sync (async pathSuggest owns Path group)', () => {
     const items = collectGotoCandidates(
       'src',
