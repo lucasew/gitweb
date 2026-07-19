@@ -1,4 +1,4 @@
-import { getRestBase, getToken } from '@/lib/auth';
+import { getRestBase, getToken, getWebOrigin } from '@/lib/auth';
 
 function apiRoot(): string {
   return getRestBase();
@@ -277,27 +277,31 @@ export async function fetchActionsJobLogs(
   }
 }
 
-/** GitHub Actions UI for a workflow run (gap stubs). */
+/** GitHub / GHE Actions UI for a workflow run (gap stubs). */
 export function githubActionsRunUrl(
   owner: string,
   repo: string,
   runDatabaseId: number | null | undefined,
+  webOrigin: string = getWebOrigin(),
 ): string {
+  const origin = webOrigin.replace(/\/+$/, '');
   if (runDatabaseId != null) {
-    return `https://github.com/${owner}/${repo}/actions/runs/${runDatabaseId}`;
+    return `${origin}/${owner}/${repo}/actions/runs/${runDatabaseId}`;
   }
-  return `https://github.com/${owner}/${repo}/actions`;
+  return `${origin}/${owner}/${repo}/actions`;
 }
 
-/** GitHub Actions job page (pretty logs UI). */
+/** GitHub / GHE Actions job page (pretty logs UI). */
 export function githubActionsJobUrl(
   owner: string,
   repo: string,
   runDatabaseId: number | null | undefined,
   jobId: number | null | undefined,
+  webOrigin: string = getWebOrigin(),
 ): string | null {
   if (runDatabaseId == null || jobId == null) return null;
-  return `https://github.com/${owner}/${repo}/actions/runs/${runDatabaseId}/job/${jobId}`;
+  const origin = webOrigin.replace(/\/+$/, '');
+  return `${origin}/${owner}/${repo}/actions/runs/${runDatabaseId}/job/${jobId}`;
 }
 
 /**
@@ -312,8 +316,13 @@ export function githubActionsJobLogsApiUrl(
   return `${apiRoot()}/repos/${owner}/${repo}/actions/jobs/${jobId}/logs`;
 }
 
-export function githubActionsHomeUrl(owner: string, repo: string): string {
-  return `https://github.com/${owner}/${repo}/actions`;
+export function githubActionsHomeUrl(
+  owner: string,
+  repo: string,
+  webOrigin: string = getWebOrigin(),
+): string {
+  const origin = webOrigin.replace(/\/+$/, '');
+  return `${origin}/${owner}/${repo}/actions`;
 }
 
 function restHeaders(): HeadersInit {

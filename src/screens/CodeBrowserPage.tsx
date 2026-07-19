@@ -9,6 +9,7 @@ import { CodeBlobView } from '@/components/CodeBlobView';
 import { PathBreadcrumb } from '@/components/PathBreadcrumb';
 import { renderMarkdownGfm } from '@/lib/rest';
 import { LoadingBlock } from '@/components/LoadingBlock';
+import { getWebOrigin } from '@/lib/auth';
 import { githubBlobUrl } from '@/lib/permalinks';
 import { gitObjectExpression } from '@/lib/repoPath';
 
@@ -98,10 +99,11 @@ export function CodeBrowserPage({ owner, name, refName, path, mode }: Props) {
     STORE_AND_NETWORK,
   );
   const obj = data.repository?.object;
+  const webOrigin = getWebOrigin();
   const ghBlob =
     mode === 'blob' && path
       ? githubBlobUrl(owner, name, refName, path)
-      : `https://github.com/${owner}/${name}/${mode}/${encodeURIComponent(refName)}${path ? `/${path}` : ''}`;
+      : `${webOrigin}/${owner}/${name}/${mode}/${encodeURIComponent(refName)}${path ? `/${path}` : ''}`;
 
   if (!obj) {
     return (

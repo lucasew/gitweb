@@ -107,6 +107,25 @@ export function webHostFromGraphql(gqlUrl: string): string {
   }
 }
 
+/**
+ * Browser origin for “Open on GitHub” / permalinks (scheme + host, no path).
+ * github.com GraphQL → `https://github.com`; GHE keeps the GraphQL scheme + web host.
+ */
+export function webOriginFromGraphql(gqlUrl: string): string {
+  try {
+    const u = new URL(normalizeGraphqlUrl(gqlUrl));
+    const host = u.hostname === 'api.github.com' ? 'github.com' : u.host;
+    return `${u.protocol}//${host}`;
+  } catch {
+    return 'https://github.com';
+  }
+}
+
+/** Active account web origin (github.com or GHE). */
+export function getWebOrigin(): string {
+  return webOriginFromGraphql(getGraphqlUrl());
+}
+
 export function meKeyFrom(gqlUrl: string, login: string): string {
   return `${webHostFromGraphql(gqlUrl)}/${login}`;
 }

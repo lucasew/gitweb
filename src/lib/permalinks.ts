@@ -1,5 +1,7 @@
 /** Build GitHub / ghweb blob URLs (optional #L n or #Ln-Lm). */
 
+import { getWebOrigin } from '@/lib/auth';
+
 export type LineRange = {
   start: number;
   end?: number;
@@ -31,14 +33,20 @@ export function encodeRepoPath(path: string): string {
     .join('/');
 }
 
+/**
+ * github.com / GHE blob URL for “Open on GitHub”.
+ * Defaults to the active account web origin (multi-account / GHE).
+ */
 export function githubBlobUrl(
   owner: string,
   name: string,
   ref: string,
   path: string,
   range?: LineRange | null,
+  webOrigin: string = getWebOrigin(),
 ): string {
-  const base = `https://github.com/${owner}/${name}/blob/${encodeRepoPath(ref)}/${encodeRepoPath(path)}`;
+  const origin = webOrigin.replace(/\/+$/, '');
+  const base = `${origin}/${owner}/${name}/blob/${encodeRepoPath(ref)}/${encodeRepoPath(path)}`;
   return range ? `${base}${lineHash(range)}` : base;
 }
 

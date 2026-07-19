@@ -28,6 +28,7 @@ import { cn } from '@/lib/cls';
 import { GithubMarkdown } from '@/components/GithubMarkdown';
 import { normalizeGithubPatch, patchFileNames } from '@/lib/githubPatch';
 import { langFromPath } from '@/lib/diffLang';
+import { getWebOrigin } from '@/lib/auth';
 import { githubBlobUrl } from '@/lib/permalinks';
 import { STORE_AND_NETWORK } from '@/lib/relayPolicy';
 
@@ -758,7 +759,7 @@ export function PullFilesDiff({
             : 'Read-only: open PR to leave line comments.'}{' '}
           <ExternalLink
             className="link"
-            href={`https://github.com/${owner}/${name}/pull/${number}/files`}
+            href={`${getWebOrigin()}/${owner}/${name}/pull/${number}/files`}
           >
             GitHub
           </ExternalLink>

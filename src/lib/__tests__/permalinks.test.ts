@@ -20,9 +20,19 @@ describe('permalinks', () => {
   });
 
   it('builds github and ghweb blob urls', () => {
-    expect(githubBlobUrl('o', 'r', 'abc', 'src/a.ts', { start: 2 })).toBe(
-      'https://github.com/o/r/blob/abc/src/a.ts#L2',
-    );
+    expect(
+      githubBlobUrl('o', 'r', 'abc', 'src/a.ts', { start: 2 }, 'https://github.com'),
+    ).toBe('https://github.com/o/r/blob/abc/src/a.ts#L2');
+    expect(
+      githubBlobUrl(
+        'o',
+        'r',
+        'abc',
+        'src/a.ts',
+        { start: 2 },
+        'https://ghe.example.com',
+      ),
+    ).toBe('https://ghe.example.com/o/r/blob/abc/src/a.ts#L2');
     expect(ghwebBlobPath('o', 'r', 'abc', 'src/a.ts', { start: 2 })).toBe(
       '/o/r/blob/abc/src/a.ts#L2',
     );

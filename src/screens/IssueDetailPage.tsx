@@ -7,6 +7,7 @@ import type { IssueDetailPageCloseMutation } from './__generated__/IssueDetailPa
 import type { IssueDetailPageReopenMutation } from './__generated__/IssueDetailPageReopenMutation.graphql';
 import type { IssueDetailPageCommentMutation } from './__generated__/IssueDetailPageCommentMutation.graphql';
 import type { IssueDetailPageTitleMutation } from './__generated__/IssueDetailPageTitleMutation.graphql';
+import { getWebOrigin } from '@/lib/auth';
 import { useToast } from '@/lib/toast';
 import { useLiveQuery } from '@/lib/useLiveQuery';
 import { ExternalLink } from '@/components/ExternalLink';
@@ -167,7 +168,7 @@ export function IssueDetailPage({ owner, name, number }: Props) {
         Issue not found.{' '}
         <ExternalLink
           className="link"
-          href={`https://github.com/${owner}/${name}/issues/${number}`}
+          href={`${getWebOrigin()}/${owner}/${name}/issues/${number}`}
         >
           Open on GitHub
         </ExternalLink>
