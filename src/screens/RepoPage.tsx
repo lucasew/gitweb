@@ -1,7 +1,7 @@
 import { graphql, useLazyLoadQuery } from 'react-relay';
 import { STORE_AND_NETWORK } from '@/lib/relayPolicy';
 import { Link } from '@tanstack/react-router';
-import { GitFork, Star } from 'lucide-react';
+import { ExternalLink as ExternalLinkIcon, GitFork, Star } from 'lucide-react';
 import type { RepoPageQuery } from './__generated__/RepoPageQuery.graphql';
 import { ExternalLink } from '@/components/ExternalLink';
 import { GithubMarkdown } from '@/components/GithubMarkdown';
@@ -100,19 +100,25 @@ export function RepoPage({ owner, name }: Props) {
               <GitFork className="size-4 shrink-0" aria-hidden />
               <span>{repo.forkCount.toLocaleString()}</span>
             </span>
+            <ExternalLink
+              href={repo.url}
+              className="inline-flex items-center gap-1 link link-hover opacity-100"
+              title="Open on GitHub"
+              aria-label="Open on GitHub"
+            >
+              <ExternalLinkIcon className="size-4 shrink-0" aria-hidden />
+              <span className="hidden sm:inline font-normal">GitHub</span>
+            </ExternalLink>
           </span>
         </h1>
         {repo.description ? (
           <p className="opacity-80 text-sm mt-1">{repo.description}</p>
         ) : null}
-        <div className="flex flex-wrap gap-2 mt-2 text-xs opacity-70">
-          {repo.primaryLanguage ? (
+        {repo.primaryLanguage ? (
+          <div className="flex flex-wrap gap-2 mt-2 text-xs opacity-70">
             <span>{repo.primaryLanguage.name}</span>
-          ) : null}
-          <ExternalLink className="link" href={repo.url}>
-            Open on GitHub
-          </ExternalLink>
-        </div>
+          </div>
+        ) : null}
       </div>
 
       <div className="card bg-base-100 border border-base-300">
