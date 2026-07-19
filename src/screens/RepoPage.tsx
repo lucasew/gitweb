@@ -100,6 +100,22 @@ export function RepoPage({ owner, name }: Props) {
               <GitFork className="size-4 shrink-0" aria-hidden />
               <span>{repo.forkCount.toLocaleString()}</span>
             </span>
+            {repo.primaryLanguage ? (
+              <span
+                className="inline-flex items-center gap-1.5"
+                title={`Primary language: ${repo.primaryLanguage.name}`}
+              >
+                <span
+                  className="size-2.5 rounded-full shrink-0 border border-base-content/20"
+                  style={{
+                    backgroundColor:
+                      repo.primaryLanguage.color ?? 'var(--color-base-300)',
+                  }}
+                  aria-hidden
+                />
+                <span className="font-normal">{repo.primaryLanguage.name}</span>
+              </span>
+            ) : null}
             <ExternalLink
               href={repo.url}
               className="inline-flex items-center gap-1 link link-hover opacity-100"
@@ -113,11 +129,6 @@ export function RepoPage({ owner, name }: Props) {
         </h1>
         {repo.description ? (
           <p className="opacity-80 text-sm mt-1">{repo.description}</p>
-        ) : null}
-        {repo.primaryLanguage ? (
-          <div className="flex flex-wrap gap-2 mt-2 text-xs opacity-70">
-            <span>{repo.primaryLanguage.name}</span>
-          </div>
         ) : null}
       </div>
 
