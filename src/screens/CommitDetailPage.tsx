@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { graphql, useLazyLoadQuery } from 'react-relay';
 import { STORE_AND_NETWORK } from '@/lib/relayPolicy';
 import { Link } from '@tanstack/react-router';
@@ -77,26 +77,35 @@ export function CommitDetailPage({ owner, name, sha }: Props) {
   const [rest, setRest] = useState<RestCommitDetail | null>(null);
   const [restErr, setRestErr] = useState<string | null>(null);
   const [restLoading, setRestLoading] = useState(true);
+  /** Monotonic id so late REST responses from a prior SHA/retry are ignored. */
+  const fetchSeq = useRef(0);
 
-  useEffect(() => {
-    let cancelled = false;
+  const loadRest = useCallback(() => {
+    const seq = ++fetchSeq.current;
     setRestLoading(true);
     setRestErr(null);
+    // Drop prior commit files while the new SHA loads (avoid flashing wrong diffs).
+    setRest(null);
     void fetchCommit(owner, name, sha)
       .then((c) => {
-        if (!cancelled) setRest(c);
+        if (seq === fetchSeq.current) setRest(c);
       })
       .catch((e: unknown) => {
-        if (!cancelled)
+        if (seq === fetchSeq.current)
           setRestErr(e instanceof Error ? e.message : String(e));
       })
       .finally(() => {
-        if (!cancelled) setRestLoading(false);
+        if (seq === fetchSeq.current) setRestLoading(false);
       });
-    return () => {
-      cancelled = true;
-    };
   }, [owner, name, sha]);
+
+  useEffect(() => {
+    loadRest();
+    return () => {
+      // Invalidate in-flight work when SHA changes or the page unmounts.
+      fetchSeq.current += 1;
+    };
+  }, [loadRest]);
 
   if (!repo || !commit) {
     return (
@@ -206,16 +215,7 @@ export function CommitDetailPage({ owner, name, sha }: Props) {
           <ErrorBanner
             title="Could not load commit files (REST)"
             detail={restErr}
-            onRetry={() => {
-              setRestLoading(true);
-              setRestErr(null);
-              void fetchCommit(owner, name, sha)
-                .then(setRest)
-                .catch((e: unknown) =>
-                  setRestErr(e instanceof Error ? e.message : String(e)),
-                )
-                .finally(() => setRestLoading(false));
-            }}
+            onRetry={loadRest}
           />
         ) : null}
         {rest && !restLoading ? (
