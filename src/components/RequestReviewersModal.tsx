@@ -196,6 +196,7 @@ export function RequestReviewersModal({
       setSearching(false);
       return;
     }
+    let cancelled = false;
     setSearching(true);
     const t = window.setTimeout(() => {
       void fetchQuery<RequestReviewersModalSearchQuery>(
@@ -206,6 +207,7 @@ export function RequestReviewersModal({
       )
         .toPromise()
         .then((data) => {
+          if (cancelled) return;
           const nodes =
             data?.repository?.assignableUsers?.nodes?.filter(Boolean) ?? [];
           setHits(
@@ -218,14 +220,21 @@ export function RequestReviewersModal({
           );
         })
         .catch((e: unknown) => {
+          if (cancelled) return;
           toast.error(
             'Search failed',
             e instanceof Error ? e.message : String(e),
           );
         })
-        .finally(() => setSearching(false));
+        .finally(() => {
+          if (!cancelled) setSearching(false);
+        });
     }, 250);
-    return () => window.clearTimeout(t);
+    return () => {
+      // Drop in-flight results when the query changes or the modal closes.
+      cancelled = true;
+      window.clearTimeout(t);
+    };
   }, [q, open, owner, name, env, toast]);
 
   const requestedIds = new Set(localRequested.map((u) => u.id));
